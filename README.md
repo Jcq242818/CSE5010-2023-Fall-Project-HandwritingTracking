@@ -1,4 +1,5 @@
-### This repository is the course Project in the course CSE5010: Wireless Network and Mobile Computing in 2023 Fall by lecturer Prof. Jin Zhang
+### This repository is the course Project in the course CSE5010: Wireless Network and Mobile Computing in 2023 Fall by lecturer Prof. Jin Zhang. 
+### The papers based on this project have been submitted to IEEE ICC '24.
 
 ## Citation
 If you find the repository is helpful to your project, please cite as follows:
