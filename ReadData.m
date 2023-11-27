@@ -28,7 +28,7 @@ array_Doppler_frequency = -max_dop:step_dop:max_dop;
 chan_num_total = chan_num_tar+chan_num_ref;
 
 
-filename_data = 'E:\Desktop\Project\data\0622\3_1.bin';
+filename_data = 'E:\Desktop\Project\data\呼吸6次\6_1.bin';
 % filename_data='E:\0618_b\0618_b\b10_'+string(p)+'.bin';
 
 fid1=fopen(filename_data,'rb');  %rb - 二级制打开文件(1 Btye = 8 bits)
@@ -125,13 +125,13 @@ end
 
 %滑动窗口
 array_start_time = 0:T_slide:total_duration-CIT;
-A_TD = zeros(length(array_start_time),length(array_Doppler_frequency));
-% A_TD = zeros(length(array_start_time),length(-60:10:60));
+% A_TD = zeros(length(array_start_time),length(array_Doppler_frequency));
+A_TD = zeros(length(array_start_time),length(-60:10:60));
 ref_array=data_cor1(1,:); % ref_array里面装着参考对齐后的数据
 tar_array=data_cor1(2,:); % tar_array里面装着监视1对齐后的数据
 
-A_TD2 = zeros(length(array_start_time),length(array_Doppler_frequency));
-% A_TD2 = zeros(length(array_start_time),length(-60:10:60));
+% A_TD2 = zeros(length(array_start_time),length(array_Doppler_frequency));
+A_TD2 = zeros(length(array_start_time),length(-60:10:60));
 ref_array2=data_cor2(1,:); % ref_array2里面装着参考对齐后的数据,和ref_array里面的数据一模一样
 tar_array2=data_cor2(2,:); % tar_array2里面装着监视2对齐后的数据
 
@@ -158,11 +158,11 @@ end
 
 for i= 1:length(array_start_time)-2
     final=fftshift(fft(tar_integer(i,:).*conj(ref_integer(i,:)),CIT_region));
-    A_TD(i,:) = final(CIT_region/2+1-max_dop/step_dop:CIT_region/2+1+max_dop/step_dop);
-    % A_TD(i,:) = final(CIT_region/2+1-6:CIT_region/2+1+6);
+    % A_TD(i,:) = final(CIT_region/2+1-max_dop/step_dop:CIT_region/2+1+max_dop/step_dop);
+    A_TD(i,:) = final(CIT_region/2+1-6:CIT_region/2+1+6);
      final2=fftshift(fft(tar_integer2(i,:).*conj(ref_integer2(i,:)),CIT_region));
-    A_TD2(i,:) = final2(CIT_region/2+1-max_dop/step_dop:CIT_region/2+1+max_dop/step_dop);
-    % A_TD2(i,:) = final2(CIT_region/2+1-6:CIT_region/2+1+6);
+    % A_TD2(i,:) = final2(CIT_region/2+1-max_dop/step_dop:CIT_region/2+1+max_dop/step_dop);
+    A_TD2(i,:) = final2(CIT_region/2+1-6:CIT_region/2+1+6);
 end
 
 
@@ -178,18 +178,18 @@ fig1 = figure(1);
 set(fig1,'position',[50,50,900,600]);
 plot_A_DT = abs(A_TD');
 plot_A_DT = mag2db(plot_A_DT/max(max(plot_A_DT)));
-h1 = imagesc(array_start_time,array_Doppler_frequency,plot_A_DT);
-% h1 = imagesc(array_start_time,-60:10:60,plot_A_DT);
+% h1 = imagesc(array_start_time,array_Doppler_frequency,plot_A_DT);
+h1 = imagesc(array_start_time,-60:10:60,plot_A_DT);
 xlim([array_start_time(1),array_start_time(end)]);
-ylim([array_Doppler_frequency(1),array_Doppler_frequency(end)]);
-% ylim([-60,60]);
+% ylim([array_Doppler_frequency(1),array_Doppler_frequency(end)]);
+ylim([-60,60]);
 % set(gcf,'unit','centimeters','position',[5 3 30 15]);
 % set(get(gca,'XLabel'),'FontSize',22);
 % set(get(gca,'YLabel'),'FontSize',22);
 colorbar;
 % title('1 and 2')
-% xlabel('Time (s)')
-% ylabel('Doppler frequency (Hz)')
+xlabel('Time (s)')
+ylabel('Doppler frequency (Hz)')
 colormap('jet');
 caxis([thres_A_TRD,0]);
 % saveas(gcf, 'E:\0617\5s_'+string(p)+'-1fft.jpg', 'jpg')
