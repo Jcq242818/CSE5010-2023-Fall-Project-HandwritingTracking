@@ -163,12 +163,12 @@ end
 
 
 
-%% 绘制CAF图
+%PLOT
 % 
 % A_TD2(95,:)=0;
 % A_TD(95,:)=0;
 
-%%画ref和sur1的CAF
+
 thres_A_TRD = -30;
 fig1 = figure(1);
 set(fig1,'position',[50,50,900,600]);
@@ -177,24 +177,48 @@ plot_A_DT = mag2db(plot_A_DT/max(max(plot_A_DT)));
 h1 = imagesc(array_start_time,array_Doppler_frequency,plot_A_DT);
 xlim([array_start_time(1),array_start_time(end)]);
 ylim([array_Doppler_frequency(1),array_Doppler_frequency(end)]);
-% 反转y轴方向
-set(gca, 'YDir', 'normal');
 set(gcf,'unit','centimeters','position',[5 3 30 15]);
 set(get(gca,'XLabel'),'FontSize',22);
 set(get(gca,'YLabel'),'FontSize',22);
+
+
 colorbar;
 title('ref and sur1')
 xlabel('Time (s)')
 ylabel('Doppler frequency (Hz)')
 colormap('jet');
 clim([thres_A_TRD,0]);
-
 % saveas(gcf, 'E:\0617\5s_'+string(p)+'-1fft.jpg', 'jpg')
 % saveas(gcf, 'C:\Users\Wu\Desktop\labsource\code\5a.jpg', 'jpg')
 
+% 
+% cfar2D = phased.CFARDetector2D('GuardBandSize',5,'TrainingBandSize',5,...
+%   'ProbabilityFalseAlarm',0.5);
+% resp=plot_A_DT;
+% rngGrid=array_Doppler_frequency.';
+% dopGrid=array_start_time.';
+% rangeIndx(1)=229;
+% rangeIndx(2)=287;
+% dopplerIndx(1)=11;
+% dopplerIndx(2)=150;
+% [columnInds,rowInds] = meshgrid(dopplerIndx(1):dopplerIndx(2),...
+%   rangeIndx(1):rangeIndx(2));
+% CUTIdx = [rowInds(:) columnInds(:)]';
+% detections = cfar2D(resp,CUTIdx);
+% fig2 = figure(2);
+% helperDetectionsMap(resp,rngGrid,dopGrid,rangeIndx,dopplerIndx,detections)
 
 
-%%画ref和sur2的CAF 
+% %saveas(gcf, 'E:\0617\5s_'+string(p)+'-2cfar.jpg', 'jpg')
+% saveas(gcf, 'C:\Users\Wu\Desktop\labsource\code\5c.jpg', 'jpg')
+% 
+% 
+% 
+% 
+% 
+% 
+% 
+% 
 % thres_A_TRD = -30;
 % fig3 = figure(3);
 % set(fig3,'position',[50,50,900,600]);
@@ -203,8 +227,6 @@ clim([thres_A_TRD,0]);
 % h2 = imagesc(array_start_time,array_Doppler_frequency,plot_A_DT2);
 % xlim([array_start_time(1),array_start_time(end)]);
 % ylim([array_Doppler_frequency(1),array_Doppler_frequency(end)]);
-% % 反转y轴方向
-% set(gca, 'YDir', 'normal');
 % set(gcf,'unit','centimeters','position',[5 3 30 15]);
 % set(get(gca,'XLabel'),'FontSize',22);
 % set(get(gca,'YLabel'),'FontSize',22);
@@ -213,149 +235,37 @@ clim([thres_A_TRD,0]);
 % ylabel('Doppler frequency (Hz)')
 % title('ref and sur2')
 % colormap('jet');
-% clim([thres_A_TRD,0]);
+% caxis([thres_A_TRD,0]);
+% hold on;
 
 
 %saveas(gcf, 'E:\0617\5s_'+string(p)+'-3fft.jpg', 'jpg')
 % saveas(gcf, 'C:\Users\Wu\Desktop\labsource\code\5b.jpg', 'jpg')
-% close all;
+% 
+% 
 
-%% 提取CAF结果每一列的最大值并进行迭代
-
-% 最后两列数据是-Inf，删除
-A_TD = A_TD(1:end-2, :);
-A_TD2 = A_TD2(1:end-2,:);
-% 删除零频附近的值
-A_TD(:, 101) = 0;
-A_TD2(:, 101) = 0;
-
-%%在画图对比一下
-
-%%画ref和sur1的CAF
-% thres_A_TRD = -30;
-% fig3 = figure(3);
-% set(fig3,'position',[50,50,900,600]);
-% plot_A_DT = abs(A_TD');
-% plot_A_DT = mag2db(plot_A_DT/max(max(plot_A_DT)));
-% h1 = imagesc(array_start_time,array_Doppler_frequency,plot_A_DT);
-% xlim([array_start_time(1),array_start_time(end)]);
-% ylim([array_Doppler_frequency(1),array_Doppler_frequency(end)]);
-% % 反转y轴方向
-% set(gca, 'YDir', 'normal');
-% set(gcf,'unit','centimeters','position',[5 3 30 15]);
-% set(get(gca,'XLabel'),'FontSize',22);
-% set(get(gca,'YLabel'),'FontSize',22);
-% colorbar;
-% title('ref and sur1')
-% xlabel('Time (s)')
-% ylabel('Doppler frequency (Hz)')
-% colormap('jet');
-% clim([thres_A_TRD,0]);
-
-% saveas(gcf, 'E:\0617\5s_'+string(p)+'-1fft.jpg', 'jpg')
-% saveas(gcf, 'C:\Users\Wu\Desktop\labsource\code\5a.jpg', 'jpg')
-
-
-
-%%画ref和sur2的CAF 
-% thres_A_TRD = -30;
+% cfar2D = phased.CFARDetector2D('GuardBandSize',5,'TrainingBandSize',5,...
+%   'ProbabilityFalseAlarm',0.5);
+% resp=plot_A_DT2;
+% rngGrid=array_Doppler_frequency.';
+% dopGrid=array_start_time.';
+% rangeIndx(1)=229;
+% rangeIndx(2)=287;
+% dopplerIndx(1)=11;
+% dopplerIndx(2)=150;
+% [columnInds,rowInds] = meshgrid(dopplerIndx(1):dopplerIndx(2),...
+%   rangeIndx(1):rangeIndx(2));
+% CUTIdx = [rowInds(:) columnInds(:)]';
+% detections = cfar2D(resp,CUTIdx);
 % fig4 = figure(4);
-% set(fig4,'position',[50,50,900,600]);
-% plot_A_DT2 = abs(A_TD2');
-% plot_A_DT2 = mag2db(plot_A_DT2/max(max(plot_A_DT2)));
-% h2 = imagesc(array_start_time,array_Doppler_frequency,plot_A_DT2);
-% xlim([array_start_time(1),array_start_time(end)]);
-% ylim([array_Doppler_frequency(1),array_Doppler_frequency(end)]);
-% % 反转y轴方向
-% set(gca, 'YDir', 'normal');
-% set(gcf,'unit','centimeters','position',[5 3 30 15]);
-% set(get(gca,'XLabel'),'FontSize',22);
-% set(get(gca,'YLabel'),'FontSize',22);
-% colorbar;
-% xlabel('Time (s)')
-% ylabel('Doppler frequency (Hz)')
-% title('ref and sur2')
-% colormap('jet');
-% clim([thres_A_TRD,0]);
+% helperDetectionsMap(resp,rngGrid,dopGrid,rangeIndx,dopplerIndx,detections)
 
 
-%saveas(gcf, 'E:\0617\5s_'+string(p)+'-3fft.jpg', 'jpg')
-% saveas(gcf, 'C:\Users\Wu\Desktop\labsource\code\5b.jpg', 'jpg')
+
+
+% saveas(gcf, 'E:\0617\5s_'+string(p)+'-4cfar.jpg', 'jpg')
+% saveas(gcf, 'C:\Users\Wu\Desktop\labsource\code\5f.jpg', 'jpg')
 % close all;
 
-%% 提取两个CAF矩阵每一行的最大值所在的列
-% 找到每一行中的最大值及其对应的列索引
-[maxValues, columnIndices] = max(abs(A_TD), [], 2);
-[maxValues2, columnIndices2] = max(abs(A_TD2), [], 2);
-% columnIndices 就是每一行中最大值所在的列数,把列数置换成对应的多普勒频率
-maxDF1 = (columnIndices - 101) * step_dop;
-maxDF2 = (columnIndices2 - 101) * step_dop;
-%% 初始位置确定
-%确定物体和收发机的初始位置
-% 定义收发机位置
-%发射机位置 
-xT = 0;
-yT = 0;
-%sur1的位置
-xR1 = 3;
-yR1 = 0;
-%sur2的位置
-xR2 = sqrt(2);
-yR2 = -sqrt(2);
-%物体的初始位置
-xTar = 2;
-yTar = -1;
-
-%%角度初始化
-fai_sur1 = zeros(1,length(array_start_time)-1);
-fai_sur2 = zeros(1,length(array_start_time)-1);
-fai_tx = zeros(1,length(array_start_time)-1);
-
-fai_sur1(1) = atan((yTar)/ (xTar - xR1));
-fai_sur2(1) = atan((yTar - yR2)/ (xTar - xR2));
-fai_tx(1) = atan(yTar/xTar);
-
-%存放每一个时刻目标的位置
-xtar = zeros(1,length(array_start_time)-1);
-ytar = zeros(1,length(array_start_time)-1);
-xtar(1) = xTar;
-ytar(1) = yTar;
-%存放方程的解的临时变量
-v_xy = zeros(1,2);
-%存放两条链路多普勒频率的临时变量
-fd = zeros(1,2);
-%解方程需要的F矩阵,参见ICCC论文
-F = zeros(2,2);
-%载波频率
-fc = 60.48e9;
-%光速
-c = 3e8;
-%开始解方程与迭代
-for i = 1:1:length(array_start_time)-2
-    fd = [maxDF1(i);maxDF2(i)];
-    F = -2*fc/c*[cos((fai_sur1(i) - fai_tx(i))/2)*cos((fai_sur1(i) + fai_tx(i))/2) , ...
-        cos((fai_sur1(i) - fai_tx(i))/2)*sin((fai_sur1(i) + fai_tx(i))/2); ...
-        cos((fai_sur2(i) - fai_tx(i))/2)*cos((fai_sur2(i) + fai_tx(i))/2), ...
-        cos((fai_sur2(i) - fai_tx(i))/2)*sin((fai_sur2(i) + fai_tx(i))/2)];
-    v_xy = F \ fd;
-    xtar(i+1) = xtar(i) + v_xy(1) * T_slide;
-    ytar(i+1) = ytar(i) + v_xy(2) * T_slide;
-    %更新下一时刻的AOA角度以便下一次进行迭代
-    fai_sur1(i+1) = atan((ytar(i+1))/ (xtar(i+1) - xR1));
-    fai_sur2(i+1) = atan((ytar(i+1) - yR2)/ (xtar(i+1) - xR2));
-    fai_tx(i+1) = atan(ytar(i+1)/xtar(i+1));
-end
-
-%% 绘制运动物体的轨迹
-% 绘制轨迹
-plot(xtar, ytar, 'o-', 'LineWidth', 2, 'MarkerSize', 8);
-
-% 设置图形标题和坐标轴标签
-title('物体运动轨迹');
-xlabel('X坐标');
-ylabel('Y坐标');
-
-% 显示网格
-grid on;
 
 
