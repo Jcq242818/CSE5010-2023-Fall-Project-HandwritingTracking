@@ -1,4 +1,4 @@
-%% ²ÎÊı¶¨Òå
+%% å‚æ•°å®šä¹‰
 clear ;
 close all;
 clc;
@@ -13,12 +13,12 @@ total_duration = 4;
 f_c = 0.5e9;
 f_s = 1e6;
 
-CIT = 0.1; %¸úÄ£ºıº¯ÊıµÄÊı¾İÁ¿ÓĞ¹Ø
+CIT = 0.1; %è·Ÿæ¨¡ç³Šå‡½æ•°çš„æ•°æ®é‡æœ‰å…³
 CIT_region = CIT*f_s;
 
 
 N_slide = 10;
-T_slide = CIT / N_slide;%½« 0.1s µÄÊı¾İÇĞ¸î³ÉN_slide ·İ£¬»¬¶¯µÄ²½³¤
+T_slide = CIT / N_slide;%å°† 0.1s çš„æ•°æ®åˆ‡å‰²æˆN_slide ä»½ï¼Œæ»‘åŠ¨çš„æ­¥é•¿
 
 max_dop = 1000;
 step_dop = 1/CIT;
@@ -31,39 +31,39 @@ chan_num_total = chan_num_tar+chan_num_ref;
 filename_data = "E:\Desktop\Project\data\big_8.bin";
 
 
-fid1=fopen(filename_data,'rb');  %rb - ¶ş¼¶ÖÆ´ò¿ªÎÄ¼ş(1 Btye = 8 bits)
-fseek(fid1,0,'eof');  %eof  ´ò¿ªÎÄ¼şÄ©Î²
-fsize = ftell(fid1);  %»ñÈ¡ÎÄ¼ş³¤¶È
+fid1=fopen(filename_data,'rb');  %rb - äºŒçº§åˆ¶æ‰“å¼€æ–‡ä»¶(1 Btye = 8 bits)
+fseek(fid1,0,'eof');  %eof  æ‰“å¼€æ–‡ä»¶æœ«å°¾
+fsize = ftell(fid1);  %è·å–æ–‡ä»¶é•¿åº¦
 
-total_samplelen = fsize/4;  % Byte/8 * 2£¬ IQ·ÖÀë
+total_samplelen = fsize/4;  % Byte/8 * 2ï¼Œ IQåˆ†ç¦»
 
-sample_1channel = 1996; %unit ´óĞ¡  unitµ¥Î»ÄÚIQ½»µş Ã¿Ò»¸öunitÖ»ÊôÓÚÒ»¸öchannel µ¥Î»Ó¦¸ÃÊÇbyte
+sample_1channel = 1996; %unit å¤§å°  unitå•ä½å†…IQäº¤å  æ¯ä¸€ä¸ªunitåªå±äºä¸€ä¸ªchannel å•ä½åº”è¯¥æ˜¯byte
 
-samplelen = sample_1channel * (chan_num_total); %Ò»¸öblock µÄ³¤¶È= channelÊıÁ¿*µ¥Î»³¤¶È
+samplelen = sample_1channel * (chan_num_total); %ä¸€ä¸ªblock çš„é•¿åº¦= channelæ•°é‡*å•ä½é•¿åº¦
 %sampleBytes = samplelen*4;
-loopNum = floor(total_samplelen/samplelen); %Ñ­»·´ÎÊı = ÏòÏÂÈ¡Õû(×Ü¹²³¤¶È/Ò»¸öblock³¤¶È)
+loopNum = floor(total_samplelen/samplelen); %å¾ªç¯æ¬¡æ•° = å‘ä¸‹å–æ•´(æ€»å…±é•¿åº¦/ä¸€ä¸ªblocké•¿åº¦)
 
-samples_per_chan = sample_1channel * loopNum ;%Ò»¸öchannel²ÉÑùµãÊı:µ¥Î»³¤¶È*Ñ­»·´ÎÊı(·´¸´²ÉÑùÁË¶àÉÙ´Î)£¬ÓÃÓÚºóÃæ´´½¨Ò»¸ö¾ØÕóÀ´´æ·ÅÊı¾İ
+samples_per_chan = sample_1channel * loopNum ;%ä¸€ä¸ªchannelé‡‡æ ·ç‚¹æ•°:å•ä½é•¿åº¦*å¾ªç¯æ¬¡æ•°(åå¤é‡‡æ ·äº†å¤šå°‘æ¬¡)ï¼Œç”¨äºåé¢åˆ›å»ºä¸€ä¸ªçŸ©é˜µæ¥å­˜æ”¾æ•°æ®
 %DurationTruth = samples_per_chan/f_s;
 fclose(fid1);
 
 
 %% Read Calibration File
-fid_cali=fopen(filename_data,'rb');%¶ş½øÖÆbyte´ò¿ªÎÄ¼ş
-fseek(fid_cali,0,'bof');%bof ´ò¿ªÎÄ¼şÍ·
-chan_seq_cali = zeros(chan_num_total,samples_per_chan);% 3xX ¾ØÕó
+fid_cali=fopen(filename_data,'rb');%äºŒè¿›åˆ¶byteæ‰“å¼€æ–‡ä»¶
+fseek(fid_cali,0,'bof');%bof æ‰“å¼€æ–‡ä»¶å¤´
+chan_seq_cali = zeros(chan_num_total,samples_per_chan);% 3xX çŸ©é˜µ
 for loopIdx = 1:loopNum
-    [data,~]=fread(fid_cali,[2,sample_1channel*chan_num_total],'int16','l');% Êú×Å´Ó×óÖÁÓÒÌîÂúÊı×é2xX£¬IQ·Ö½â int16 16×Ö½ÚÊı
+    [data,~]=fread(fid_cali,[2,sample_1channel*chan_num_total],'int16','l');% ç«–ç€ä»å·¦è‡³å³å¡«æ»¡æ•°ç»„2xXï¼ŒIQåˆ†è§£ int16 16å­—èŠ‚æ•°
     for idx_chan = 0:chan_num_total-1
         frame_start = sample_1channel*(0 + idx_chan)+1;
         frame_end = sample_1channel*(1 + idx_chan);
-        chan_seq_cali(idx_chan+1,(loopIdx-1)*sample_1channel+1:loopIdx*sample_1channel) = ...%·ÖÈı×éĞ´ÈëÊı¾İ
-            data(1,frame_start:frame_end) + 1i*data(2,frame_start:frame_end);%È¸Ê³ÊÇIQ·Ö½â£¬°ÑÖ®Ç°µÄIQ·Ö½â×éºÏ
+        chan_seq_cali(idx_chan+1,(loopIdx-1)*sample_1channel+1:loopIdx*sample_1channel) = ...%åˆ†ä¸‰ç»„å†™å…¥æ•°æ®
+            data(1,frame_start:frame_end) + 1i*data(2,frame_start:frame_end);%é›€é£Ÿæ˜¯IQåˆ†è§£ï¼ŒæŠŠä¹‹å‰çš„IQåˆ†è§£ç»„åˆ
     end
 end
 fclose(fid_cali);
 
-%% »æÍ¼¼ì²é½ÓÊÕĞÅºÅÊÇ·ñÕıÈ·
+%% ç»˜å›¾æ£€æŸ¥æ¥æ”¶ä¿¡å·æ˜¯å¦æ­£ç¡®
 offset = 1000;
 ChannelIdx = 1;
 EndSearch = samples_per_chan;
@@ -78,16 +78,16 @@ chan_num_total = 3;
 %     plot(imag(chan_seq_cali(idxChannel,StartSearch:EndSearch)));
 %     hold off;
 % end
-% sgtitle('Êµ¼Ê½ÓÊÕµ½µÄĞÅºÅ');% ÕûÌå
+% sgtitle('å®é™…æ¥æ”¶åˆ°çš„ä¿¡å·');% æ•´ä½“
 % figure(2)
 % 
 % for idxChannel = 1:chan_num_total
 %     subplot(chan_num_total,1,idxChannel)
 %     pwelch(chan_seq_cali(idxChannel,StartSearch:EndSearch),[],[],[],f_s,'centered','psd');
 % end
-% sgtitle('psd');%ÕûÌå
+% sgtitle('psd');%æ•´ä½“
 % 
-%% Êı¾İ´¦Àí
+%% æ•°æ®å¤„ç†
 data_count = 2184*1;
 S_ref = chan_seq_cali(3,1:data_count);
 S_tar = chan_seq_cali(1,1:data_count);
@@ -96,13 +96,13 @@ h_temp = xcorr(S_ref,S_tar);
 col_h = col_h +1;
 % N = floor(CIT*f_s)/100-1;
 % N = 1000;
-% col_max = find(max(abs(h_temp(col_h/2-N:col_h/2+N))) == abs(h_temp(col_h/2-N:col_h/2+N)));%Ä£ºıº¯Êıº¯ÊıÔ¤´¦ÀíÒ»×é
+% col_max = find(max(abs(h_temp(col_h/2-N:col_h/2+N))) == abs(h_temp(col_h/2-N:col_h/2+N)));%æ¨¡ç³Šå‡½æ•°å‡½æ•°é¢„å¤„ç†ä¸€ç»„
 % array_sample_shift = col_max - N -1;
 
 % figure(3)
 % plot(abs(h_temp));
 
-%ÌáÈ¡ĞÅµÀ
+%æå–ä¿¡é“
 S_tar=chan_seq_cali(1,:);
 S_ref1=chan_seq_cali(2,:);
 S_ref2=chan_seq_cali(3,:);
@@ -123,27 +123,27 @@ else
 end
 
 
-%»¬¶¯´°¿Ú
+%æ»‘åŠ¨çª—å£
 array_start_time = 0:T_slide:total_duration-CIT;
 A_TD = zeros(length(array_start_time),length(array_Doppler_frequency));
-ref_array=data_cor1(1,:); % ref_arrayÀïÃæ×°×Å²Î¿¼¶ÔÆëºóµÄÊı¾İ
-tar_array=data_cor1(2,:); % tar_arrayÀïÃæ×°×Å¼àÊÓ1¶ÔÆëºóµÄÊı¾İ
+ref_array=data_cor1(1,:); % ref_arrayé‡Œé¢è£…ç€å‚è€ƒå¯¹é½åçš„æ•°æ®
+tar_array=data_cor1(2,:); % tar_arrayé‡Œé¢è£…ç€ç›‘è§†1å¯¹é½åçš„æ•°æ®
 
 A_TD2 = zeros(length(array_start_time),length(array_Doppler_frequency));
-ref_array2=data_cor2(1,:); % ref_array2ÀïÃæ×°×Å²Î¿¼¶ÔÆëºóµÄÊı¾İ,ºÍref_arrayÀïÃæµÄÊı¾İÒ»Ä£Ò»Ñù
-tar_array2=data_cor2(2,:); % tar_array2ÀïÃæ×°×Å¼àÊÓ2¶ÔÆëºóµÄÊı¾İ
+ref_array2=data_cor2(1,:); % ref_array2é‡Œé¢è£…ç€å‚è€ƒå¯¹é½åçš„æ•°æ®,å’Œref_arrayé‡Œé¢çš„æ•°æ®ä¸€æ¨¡ä¸€æ ·
+tar_array2=data_cor2(2,:); % tar_array2é‡Œé¢è£…ç€ç›‘è§†2å¯¹é½åçš„æ•°æ®
 
-%Êı¾İ´¦Àí
+%æ•°æ®å¤„ç†
 ref_integer=zeros(length(array_start_time),CIT_region);
-tar_integer=zeros(length(array_start_time),CIT_region);%×¼±¸fftÊı×é±í
+tar_integer=zeros(length(array_start_time),CIT_region);%å‡†å¤‡fftæ•°ç»„è¡¨
 
 ref_integer2=zeros(length(array_start_time),CIT_region);
-tar_integer2=zeros(length(array_start_time),CIT_region);%×¼±¸fftÊı×é±í
+tar_integer2=zeros(length(array_start_time),CIT_region);%å‡†å¤‡fftæ•°ç»„è¡¨
 
 for i= 1:length(array_start_time)-2
     ref_integer(i,:)=ref_array((round(array_start_time(i)*f_s+1)):(round(array_start_time(i)*f_s)+round(CIT*f_s)));
     tar_integer(i,:)=tar_array((round(array_start_time(i)*f_s+1)):(round(array_start_time(i)*f_s)+round(CIT*f_s)));
-end                                                    %·ÖÀà²¢ÌîĞ´fftÊı×é±í
+end                                                    %åˆ†ç±»å¹¶å¡«å†™fftæ•°ç»„è¡¨
 
 for i= 1:length(array_start_time)-2
     ref_integer2(i,:)=ref_array2((round(array_start_time(i)*f_s+1)):(round(array_start_time(i)*f_s)+round(CIT*f_s)));
@@ -163,12 +163,12 @@ end
 
 
 
-%% »æÖÆCAFÍ¼
+%% ç»˜åˆ¶CAFå›¾
 % 
 % A_TD2(95,:)=0;
 % A_TD(95,:)=0;
 
-%%»­refºÍsur1µÄCAF
+%%ç”»refå’Œsur1çš„CAF
 thres_A_TRD = -30;
 fig1 = figure(1);
 set(fig1,'position',[50,50,900,600]);
@@ -177,7 +177,7 @@ plot_A_DT = mag2db(plot_A_DT/max(max(plot_A_DT)));
 h1 = imagesc(array_start_time,array_Doppler_frequency,plot_A_DT);
 xlim([array_start_time(1),array_start_time(end)]);
 ylim([array_Doppler_frequency(1),array_Doppler_frequency(end)]);
-% ·´×ªyÖá·½Ïò
+% åè½¬yè½´æ–¹å‘
 set(gca, 'YDir', 'normal');
 set(gcf,'unit','centimeters','position',[5 3 30 15]);
 set(get(gca,'XLabel'),'FontSize',22);
@@ -194,7 +194,7 @@ clim([thres_A_TRD,0]);
 
 
 
-%%»­refºÍsur2µÄCAF 
+%%ç”»refå’Œsur2çš„CAF 
 % thres_A_TRD = -30;
 % fig3 = figure(3);
 % set(fig3,'position',[50,50,900,600]);
@@ -203,7 +203,7 @@ clim([thres_A_TRD,0]);
 % h2 = imagesc(array_start_time,array_Doppler_frequency,plot_A_DT2);
 % xlim([array_start_time(1),array_start_time(end)]);
 % ylim([array_Doppler_frequency(1),array_Doppler_frequency(end)]);
-% % ·´×ªyÖá·½Ïò
+% % åè½¬yè½´æ–¹å‘
 % set(gca, 'YDir', 'normal');
 % set(gcf,'unit','centimeters','position',[5 3 30 15]);
 % set(get(gca,'XLabel'),'FontSize',22);
@@ -220,18 +220,18 @@ clim([thres_A_TRD,0]);
 % saveas(gcf, 'C:\Users\Wu\Desktop\labsource\code\5b.jpg', 'jpg')
 % close all;
 
-%% ÌáÈ¡CAF½á¹ûÃ¿Ò»ÁĞµÄ×î´óÖµ²¢½øĞĞµü´ú
+%% æå–CAFç»“æœæ¯ä¸€åˆ—çš„æœ€å¤§å€¼å¹¶è¿›è¡Œè¿­ä»£
 
-% ×îºóÁ½ÁĞÊı¾İÊÇ-Inf£¬É¾³ı
+% æœ€åä¸¤åˆ—æ•°æ®æ˜¯-Infï¼Œåˆ é™¤
 A_TD = A_TD(1:end-2, :);
 A_TD2 = A_TD2(1:end-2,:);
-% É¾³ıÁãÆµ¸½½üµÄÖµ
+% åˆ é™¤é›¶é¢‘é™„è¿‘çš„å€¼
 A_TD(:, 101) = 0;
 A_TD2(:, 101) = 0;
 
-%%ÔÚ»­Í¼¶Ô±ÈÒ»ÏÂ
+%%åœ¨ç”»å›¾å¯¹æ¯”ä¸€ä¸‹
 
-%%»­refºÍsur1µÄCAF
+%%ç”»refå’Œsur1çš„CAF
 % thres_A_TRD = -30;
 % fig3 = figure(3);
 % set(fig3,'position',[50,50,900,600]);
@@ -240,7 +240,7 @@ A_TD2(:, 101) = 0;
 % h1 = imagesc(array_start_time,array_Doppler_frequency,plot_A_DT);
 % xlim([array_start_time(1),array_start_time(end)]);
 % ylim([array_Doppler_frequency(1),array_Doppler_frequency(end)]);
-% % ·´×ªyÖá·½Ïò
+% % åè½¬yè½´æ–¹å‘
 % set(gca, 'YDir', 'normal');
 % set(gcf,'unit','centimeters','position',[5 3 30 15]);
 % set(get(gca,'XLabel'),'FontSize',22);
@@ -257,7 +257,7 @@ A_TD2(:, 101) = 0;
 
 
 
-%%»­refºÍsur2µÄCAF 
+%%ç”»refå’Œsur2çš„CAF 
 % thres_A_TRD = -30;
 % fig4 = figure(4);
 % set(fig4,'position',[50,50,900,600]);
@@ -266,7 +266,7 @@ A_TD2(:, 101) = 0;
 % h2 = imagesc(array_start_time,array_Doppler_frequency,plot_A_DT2);
 % xlim([array_start_time(1),array_start_time(end)]);
 % ylim([array_Doppler_frequency(1),array_Doppler_frequency(end)]);
-% % ·´×ªyÖá·½Ïò
+% % åè½¬yè½´æ–¹å‘
 % set(gca, 'YDir', 'normal');
 % set(gcf,'unit','centimeters','position',[5 3 30 15]);
 % set(get(gca,'XLabel'),'FontSize',22);
@@ -283,30 +283,30 @@ A_TD2(:, 101) = 0;
 % saveas(gcf, 'C:\Users\Wu\Desktop\labsource\code\5b.jpg', 'jpg')
 % close all;
 
-%% ÌáÈ¡Á½¸öCAF¾ØÕóÃ¿Ò»ĞĞµÄ×î´óÖµËùÔÚµÄÁĞ
-% ÕÒµ½Ã¿Ò»ĞĞÖĞµÄ×î´óÖµ¼°Æä¶ÔÓ¦µÄÁĞË÷Òı
+%% æå–ä¸¤ä¸ªCAFçŸ©é˜µæ¯ä¸€è¡Œçš„æœ€å¤§å€¼æ‰€åœ¨çš„åˆ—
+% æ‰¾åˆ°æ¯ä¸€è¡Œä¸­çš„æœ€å¤§å€¼åŠå…¶å¯¹åº”çš„åˆ—ç´¢å¼•
 [maxValues, columnIndices] = max(abs(A_TD), [], 2);
 [maxValues2, columnIndices2] = max(abs(A_TD2), [], 2);
-% columnIndices ¾ÍÊÇÃ¿Ò»ĞĞÖĞ×î´óÖµËùÔÚµÄÁĞÊı,°ÑÁĞÊıÖÃ»»³É¶ÔÓ¦µÄ¶àÆÕÀÕÆµÂÊ
+% columnIndices å°±æ˜¯æ¯ä¸€è¡Œä¸­æœ€å¤§å€¼æ‰€åœ¨çš„åˆ—æ•°,æŠŠåˆ—æ•°ç½®æ¢æˆå¯¹åº”çš„å¤šæ™®å‹’é¢‘ç‡
 maxDF1 = (columnIndices - 101) * step_dop;
 maxDF2 = (columnIndices2 - 101) * step_dop;
-%% ³õÊ¼Î»ÖÃÈ·¶¨
-%È·¶¨ÎïÌåºÍÊÕ·¢»úµÄ³õÊ¼Î»ÖÃ
-% ¶¨ÒåÊÕ·¢»úÎ»ÖÃ
-%·¢Éä»úÎ»ÖÃ 
+%% åˆå§‹ä½ç½®ç¡®å®š
+%ç¡®å®šç‰©ä½“å’Œæ”¶å‘æœºçš„åˆå§‹ä½ç½®
+% å®šä¹‰æ”¶å‘æœºä½ç½®
+%å‘å°„æœºä½ç½® 
 xT = 0;
 yT = 0;
-%sur1µÄÎ»ÖÃ
+%sur1çš„ä½ç½®
 xR1 = 3;
 yR1 = 0;
-%sur2µÄÎ»ÖÃ
+%sur2çš„ä½ç½®
 xR2 = sqrt(2);
 yR2 = -sqrt(2);
-%ÎïÌåµÄ³õÊ¼Î»ÖÃ
+%ç‰©ä½“çš„åˆå§‹ä½ç½®
 xTar = 2;
 yTar = -1;
 
-%%½Ç¶È³õÊ¼»¯
+%%è§’åº¦åˆå§‹åŒ–
 fai_sur1 = zeros(1,length(array_start_time)-1);
 fai_sur2 = zeros(1,length(array_start_time)-1);
 fai_tx = zeros(1,length(array_start_time)-1);
@@ -315,22 +315,22 @@ fai_sur1(1) = atan((yTar)/ (xTar - xR1));
 fai_sur2(1) = atan((yTar - yR2)/ (xTar - xR2));
 fai_tx(1) = atan(yTar/xTar);
 
-%´æ·ÅÃ¿Ò»¸öÊ±¿ÌÄ¿±êµÄÎ»ÖÃ
+%å­˜æ”¾æ¯ä¸€ä¸ªæ—¶åˆ»ç›®æ ‡çš„ä½ç½®
 xtar = zeros(1,length(array_start_time)-1);
 ytar = zeros(1,length(array_start_time)-1);
 xtar(1) = xTar;
 ytar(1) = yTar;
-%´æ·Å·½³ÌµÄ½âµÄÁÙÊ±±äÁ¿
+%å­˜æ”¾æ–¹ç¨‹çš„è§£çš„ä¸´æ—¶å˜é‡
 v_xy = zeros(1,2);
-%´æ·ÅÁ½ÌõÁ´Â·¶àÆÕÀÕÆµÂÊµÄÁÙÊ±±äÁ¿
+%å­˜æ”¾ä¸¤æ¡é“¾è·¯å¤šæ™®å‹’é¢‘ç‡çš„ä¸´æ—¶å˜é‡
 fd = zeros(1,2);
-%½â·½³ÌĞèÒªµÄF¾ØÕó,²Î¼ûICCCÂÛÎÄ
+%è§£æ–¹ç¨‹éœ€è¦çš„FçŸ©é˜µ,å‚è§ICCCè®ºæ–‡
 F = zeros(2,2);
-%ÔØ²¨ÆµÂÊ
+%è½½æ³¢é¢‘ç‡
 fc = 60.48e9;
-%¹âËÙ
+%å…‰é€Ÿ
 c = 3e8;
-%¿ªÊ¼½â·½³ÌÓëµü´ú
+%å¼€å§‹è§£æ–¹ç¨‹ä¸è¿­ä»£
 for i = 1:1:length(array_start_time)-2
     fd = [maxDF1(i);maxDF2(i)];
     F = -2*fc/c*[cos((fai_sur1(i) - fai_tx(i))/2)*cos((fai_sur1(i) + fai_tx(i))/2) , ...
@@ -340,22 +340,22 @@ for i = 1:1:length(array_start_time)-2
     v_xy = F \ fd;
     xtar(i+1) = xtar(i) + v_xy(1) * T_slide;
     ytar(i+1) = ytar(i) + v_xy(2) * T_slide;
-    %¸üĞÂÏÂÒ»Ê±¿ÌµÄAOA½Ç¶ÈÒÔ±ãÏÂÒ»´Î½øĞĞµü´ú
+    %æ›´æ–°ä¸‹ä¸€æ—¶åˆ»çš„AOAè§’åº¦ä»¥ä¾¿ä¸‹ä¸€æ¬¡è¿›è¡Œè¿­ä»£
     fai_sur1(i+1) = atan((ytar(i+1))/ (xtar(i+1) - xR1));
     fai_sur2(i+1) = atan((ytar(i+1) - yR2)/ (xtar(i+1) - xR2));
     fai_tx(i+1) = atan(ytar(i+1)/xtar(i+1));
 end
 
-%% »æÖÆÔË¶¯ÎïÌåµÄ¹ì¼£
-% »æÖÆ¹ì¼£
+%% ç»˜åˆ¶è¿åŠ¨ç‰©ä½“çš„è½¨è¿¹
+% ç»˜åˆ¶è½¨è¿¹
 plot(xtar, ytar, 'o-', 'LineWidth', 2, 'MarkerSize', 8);
 
-% ÉèÖÃÍ¼ĞÎ±êÌâºÍ×ø±êÖá±êÇ©
-title('ÎïÌåÔË¶¯¹ì¼£');
-xlabel('X×ø±ê');
-ylabel('Y×ø±ê');
+% è®¾ç½®å›¾å½¢æ ‡é¢˜å’Œåæ ‡è½´æ ‡ç­¾
+title('ç‰©ä½“è¿åŠ¨è½¨è¿¹');
+xlabel('Xåæ ‡');
+ylabel('Yåæ ‡');
 
-% ÏÔÊ¾Íø¸ñ
+% æ˜¾ç¤ºç½‘æ ¼
 grid on;
 
 
