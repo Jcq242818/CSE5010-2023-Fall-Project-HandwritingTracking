@@ -28,7 +28,7 @@ array_Doppler_frequency = -max_dop:step_dop:max_dop;
 chan_num_total = chan_num_tar+chan_num_ref;
 
 
-filename_data = "E:\Desktop\Project\data\0413\3_small.bin";
+filename_data = "E:\Desktop\Project\data\0413\7.bin";
 
 
 fid1=fopen(filename_data,'rb');  %rb - 二级制打开文件(1 Btye = 8 bits)
@@ -228,7 +228,10 @@ A_TD2 = A_TD2(1:end-2,:);
 % 删除零频附近的值
 A_TD(:, 101) = 0;
 A_TD2(:, 101) = 0;
-
+%%重要，这个删去无关信息的起始时间delete_index需要自适应地动态调整
+delete_index = 51;
+A_TD = A_TD(delete_index:end,:);
+A_TD2 = A_TD2(delete_index:end,:);
 %%在画图对比一下
 
 %%画ref和sur1的CAF
@@ -306,22 +309,24 @@ yR2 = -sqrt(2);
 xTar = 2;
 yTar = -sqrt(2);
 
+sensing_time = array_start_time(delete_index:end);
+sensing_time = sensing_time - (delete_index -1 ) * 0.01;
 %%角度初始化
-fai_sur1 = zeros(1,length(array_start_time)-1);
-fai_sur2 = zeros(1,length(array_start_time)-1);
-fai_tx = zeros(1,length(array_start_time)-1);
+fai_sur1 = zeros(1,length(sensing_time)-1);
+fai_sur2 = zeros(1,length(sensing_time)-1);
+fai_tx = zeros(1,length(sensing_time)-1);
 
 fai_sur1(1) = atan((yTar)/ (xTar - xR1));
 fai_sur2(1) = atan((yTar - yR2)/ (xTar - xR2));
 fai_tx(1) = atan(yTar/xTar);
 
 %存放每一个时刻目标的位置
-xtar = zeros(1,length(array_start_time)-1);
-ytar = zeros(1,length(array_start_time)-1);
+xtar = zeros(1,length(sensing_time)-1);
+ytar = zeros(1,length(sensing_time)-1);
 xtar(1) = xTar;
 ytar(1) = yTar;
 %存放方程每一次迭代解的xy方向速度值
-v_xy = zeros(length(array_start_time)-2,2);
+v_xy = zeros(length(sensing_time)-2,2);
 %存放两条链路多普勒频率的临时变量
 fd = zeros(1,2);
 %解方程需要的F矩阵,参见ICCC论文
@@ -331,17 +336,18 @@ fc = 60.48e9;
 %光速
 c = 3e8;
 %开始解方程与迭代
-for i = 1:1:length(array_start_time)-2
+for i = 1:1:length(sensing_time)-2
     fd = [maxDF1(i);maxDF2(i)];
     F = -2*fc/c*[cos((fai_sur1(i) - fai_tx(i))/2)*cos((fai_sur1(i) + fai_tx(i))/2) , ...
         cos((fai_sur1(i) - fai_tx(i))/2)*sin((fai_sur1(i) + fai_tx(i))/2); ...
         cos((fai_sur2(i) - fai_tx(i))/2)*cos((fai_sur2(i) + fai_tx(i))/2), ...
         cos((fai_sur2(i) - fai_tx(i))/2)*sin((fai_sur2(i) + fai_tx(i))/2)];
     v_xy(i,:) = F \ fd;
-    %判断解是否正确，如果解出来离谱的速度值，要把它限制在一定的范围内
-    % if v_xy(i,1) > 1 || v_xy(i,2) > 1
-    %     v_xy(i,1) = 0.5;
-    %     v_xy(i,2) = 0.5;
+    %判断解是否正确，如果解出来离谱的速度值，就要用之前的值进行加权平均
+    if abs(v_xy(i,1)) > 0.6 
+        v_xy(i,1) = (v_xy(i-1,1) + v_xy(i-2,1) + v_xy(i-3,1))/3;
+    elseif abs(v_xy(i,2)) > 0.6
+        v_xy(i,2) = (v_xy(i-1,2) + v_xy(i-2,2) + v_xy(i-3,2))/3;
     end
     xtar(i+1) = xtar(i) + v_xy(i,1) * T_slide;
     ytar(i+1) = ytar(i) + v_xy(i,2) * T_slide;
@@ -354,13 +360,20 @@ end
 %% 绘制运动物体的轨迹
 % 绘制轨迹
 fig3 = figure(3);
-plot(xtar, ytar, 'o-', 'LineWidth', 2, 'MarkerSize', 8);
+plot(xtar, ytar, '-','Color', [1, 0.5, 0],'LineWidth', 3,'DisplayName', 'Estimated Trajectory');
 % 设置图形标题和坐标轴标签
+hold on;
+plot(xtar(1), ytar(1), 'o', 'MarkerSize', 6, 'MarkerEdgeColor', 'r',...
+    'MarkerFaceColor', 'none', 'LineWidth', 2.5,'DisplayName', 'Initial Point');
+plot(xtar(end), ytar(end), 'x', 'MarkerSize', 8, 'MarkerEdgeColor', 'b',...
+    'MarkerFaceColor', 'none', 'LineWidth', 2.5,'DisplayName', 'End Point');
 title('物体运动轨迹');
 xlabel('X坐标');
 ylabel('Y坐标');
-% xlim([]);
-% ylim([]);
+hold off;
+legend('show','Location', 'southwest');
+% xlim([1.5 2]);
+% ylim([-2 -1]);
 % 显示网格
 grid on;
 
