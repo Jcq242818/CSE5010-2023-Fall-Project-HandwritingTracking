@@ -184,12 +184,12 @@ clim([thres_A_TRD,0]);
 A_TD = A_TD(1:end-2, :);
 A_TD2 = A_TD2(1:end-2,:);
 % 
-A_TD(:, 101) = [];
-A_TD2(:, 101) = [];
-%%delete_index
-delete_index = 51;
-A_TD = A_TD(delete_index:end,:);
-A_TD2 = A_TD2(delete_index:end,:);
+% A_TD(:, 101) = [];
+% A_TD2(:, 101) = [];
+% delete_index
+% delete_index = 40;
+% A_TD = A_TD(delete_index:end,:);
+% A_TD2 = A_TD2(delete_index:end,:);
 %%
 
 
@@ -235,7 +235,7 @@ ylabel('Doppler frequency (Hz)')
 title('ref and sur2')
 colormap('jet');
 clim([thres_A_TRD,0]);
-close('all')
+% close('all')
 
 %% CAF
 % 
@@ -245,59 +245,43 @@ close('all')
 maxDF1 = (columnIndices - 101) * step_dop;
 maxDF2 = (columnIndices2 - 101) * step_dop;
 
-%% 
-% 对maxDF做积分
-cumsumMaxDF = zeros(2,339);
-cumsumMaxDF(1,:) = cumsum(maxDF1');
-cumsumMaxDF(2,:) = cumsum(maxDF2');
 
-% save('D:\Github\Passive-Handwriting-Tracking\data\train\data.mat', 'cumsumMaxDF');
+length = 350;
 
-% 对cumsum做卡尔曼平滑
-cumsumMaxDF_KS = zeros(2,339);
-cumsumMaxDF_KS(1,:) = KalmanSmoother(cumsumMaxDF(1,:));
-cumsumMaxDF_KS(2,:) = KalmanSmoother(cumsumMaxDF(2,:));
-
-figure(7);
-plot(cumsumMaxDF(1,:), '-', 'LineWidth', 2, 'DisplayName', 'Channel 1');
-hold on;
-plot(cumsumMaxDF(2,:), '-', 'LineWidth', 2, 'DisplayName', 'Channel 2');
-hold on;
-plot(cumsumMaxDF_KS(1,:), '-', 'LineWidth', 2, 'DisplayName', 'Channel 1 KS');
-hold on;
-plot(cumsumMaxDF_KS(2,:), '-', 'LineWidth', 2, 'DisplayName', 'Channel 2 KS');
-hold off;
-
-legend('show');
-grid on;
-
-
-% 对cumsum做微分
-maxDF1_KS = diff(cumsumMaxDF_KS(1,:));
-maxDF2_KS = diff(cumsumMaxDF_KS(2,:));
-
-figure(8);
-plot(maxDF1, '-','LineWidth', 2, 'DisplayName', 'Channel 1 original');
-hold on;
-plot(maxDF2, '-','LineWidth', 2, 'DisplayName', 'Channel 2 original');
-hold on;
-plot(maxDF1_KS, '-','LineWidth', 2, 'DisplayName', 'Channel 1 KS undirect');
-hold on;
-plot(maxDF2_KS, '-','LineWidth', 2, 'DisplayName', 'Channel 2 KS undirect');
-hold on;
-
-% 对比直接做卡尔曼平滑
-maxDF_KS = zeros(2,339);
+% 
+maxDF_KS = zeros(2, length);
 maxDF_KS(1,:) = KalmanSmoother(maxDF1);
 maxDF_KS(2,:) = KalmanSmoother(maxDF2);
 
-plot(maxDF_KS(1,:), '-','LineWidth', 2, 'DisplayName', 'Channel 1 KS direct');
+% 
+maxDF_KSS = zeros(2, length);
+maxDF_KSS(1,:) = KalmanSmoother(maxDF_KS(1,:));
+maxDF_KSS(2,:) = KalmanSmoother(maxDF_KS(2,:));
+
+
+figure(8);
+subplot(2,1,1);
+plot(maxDF1, '-','LineWidth', 2, 'DisplayName', 'Channel 1 original');
 hold on;
-plot(maxDF_KS(2,:), '-','LineWidth', 2, 'DisplayName', 'Channel 2 KS direct');
+plot(maxDF_KS(1,:), '-','LineWidth', 2, 'DisplayName', 'Channel 1 KS');
+hold on;
+plot(maxDF_KSS(1,:), '-','LineWidth', 2, 'DisplayName', 'Channel 1 KSS');
 hold off;
 
-ylim([-150, 150]);
-yticks(-150:10:150);
+ylim([-60, 60]);
+yticks(-60:20:60);
+legend('show');
+grid on;
+
+subplot(2,1,2);
+plot(maxDF2, '-','LineWidth', 2, 'DisplayName', 'Channel 2 original');
+hold on;
+plot(maxDF_KS(2,:), '-','LineWidth', 2, 'DisplayName', 'Channel 2 KS');
+hold on;
+plot(maxDF_KSS(2,:), '-','LineWidth', 2, 'DisplayName', 'Channel 2 KSS');
+hold off;
+
+yticks(-60:20:60);
 legend('show');
 grid on;
 
@@ -316,9 +300,9 @@ xTar = 2;
 yTar = -sqrt(2);
 
 
-fai_sur1 = zeros(1,339);
-fai_sur2 = zeros(1,339);
-fai_tx = zeros(1,339);
+fai_sur1 = zeros(1, length);
+fai_sur2 = zeros(1, length);
+fai_tx = zeros(1, length);
 
 fai_sur1(1) = atan((yTar)/ (xTar - xR1));
 fai_sur2(1) = atan((yTar - yR2)/ (xTar - xR2));
@@ -329,13 +313,13 @@ fai_sur2(1) = atan((yTar - yR2)/ (xTar - xR2));
 fai_tx(1) = atan(yTar/xTar);
 
 %
-xtar = zeros(1,339);
-ytar = zeros(1,339);
+xtar = zeros(1, length);
+ytar = zeros(1, length);
 xtar(1) = xTar;
 ytar(1) = yTar;
 
 %xy
-v_xy = zeros(339,2);
+v_xy = zeros( length,2);
 vMax = 0.5;
 
 %
@@ -343,17 +327,15 @@ fd = zeros(1,2);
 %F,ICCC
 F = zeros(2,2);
 
-
 v_xy(1,:) = [0.1, 0.1];
 
 for i = 1:1:338
-    fd = [maxDF1_KS(i); maxDF2_KS(i)];
+    fd = [maxDF_KSS(1,i); maxDF_KSS(2,i)];
     F = -2*f_c/c*[cos((fai_sur1(i) - fai_tx(i))/2) * cos((fai_sur1(i) + fai_tx(i))/2) , ...
                  cos((fai_sur1(i) - fai_tx(i))/2) * sin((fai_sur1(i) + fai_tx(i))/2); ...
                  cos((fai_sur2(i) - fai_tx(i))/2) * cos((fai_sur2(i) + fai_tx(i))/2), ...
                  cos((fai_sur2(i) - fai_tx(i))/2) * sin((fai_sur2(i) + fai_tx(i))/2)];
     v_xy(i,:) = F \ fd;
-
 
     %
     % if (abs(v_xy(i,1)) > vMax) || (abs(v_xy(i,2)) > vMax)
@@ -371,7 +353,7 @@ for i = 1:1:338
     xtar(i+1) = xtar(i) + v_xy(i,1) * T_slide;
     ytar(i+1) = ytar(i) + v_xy(i,2) * T_slide;
 
-    %更新下一时刻的AOA角度以便下一次进行迭代
+    %AOA
     fai_sur1(i+1) = atan((ytar(i+1) - yR1) / (xtar(i+1) - xR1));
     fai_sur2(i+1) = atan((ytar(i+1) - yR2) / (xtar(i+1) - xR2));
     fai_tx(i+1) = atan(ytar(i+1) / xtar(i+1));
@@ -388,13 +370,11 @@ legend('show');
 %% 
 % 
 figure(10);
-plot(xtar, ytar, '-','Color', [1, 0.5, 0],'LineWidth', 3,'DisplayName', 'Estimated Trajectory');
+plot(xtar, ytar, '-', 'LineWidth', 3,'DisplayName', 'Trajectory');
 % 
 hold on;
-plot(xtar(1), ytar(1), 'o', 'MarkerSize', 6, 'MarkerEdgeColor', 'r',...
-    'MarkerFaceColor', 'none', 'LineWidth', 2.5,'DisplayName', 'Initial Point');
-plot(xtar(end), ytar(end), 'x', 'MarkerSize', 6, 'MarkerEdgeColor', 'b',...
-    'MarkerFaceColor', 'none', 'LineWidth', 2.5,'DisplayName', 'End Point');
+plot(xtar(1), ytar(1), 'o', 'MarkerSize', 6, 'LineWidth', 2.5,'DisplayName', 'Start');
+plot(xtar(end), ytar(end), 'x', 'MarkerSize', 6, 'LineWidth', 2.5,'DisplayName', 'End');
 hold off;
 
 legend('show','Location', 'northeast');
