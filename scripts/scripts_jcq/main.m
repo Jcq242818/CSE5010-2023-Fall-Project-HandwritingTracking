@@ -25,7 +25,7 @@ array_Doppler_frequency = -max_dop:step_dop:max_dop;
 
 chan_num_total = chan_num_tar+chan_num_ref;
 
-filename_data = "D:\Github\Passive-Handwriting-Tracking\data\0413\seven_small.bin";
+filename_data = "D:\Github\Passive-Handwriting-Tracking\data\0413\8_small.bin";
 
 fid1=fopen(filename_data,'rb');  %rb - (1 Btye = 8 bits)
 fseek(fid1,0,'eof');  %eof  
@@ -109,6 +109,7 @@ end
 %FFT
 % tar_integer=ClutterCancellation_Doppler(tar_integer,ref_integer);
 % tar_integer2=ClutterCancellation_Doppler(tar_integer2,ref_integer);
+
 for i= 1:length(array_start_time)-2
     final=fftshift(fft(tar_integer(i,:).*conj(ref_integer(i,:)),CIT_region));
     A_TD(i,:) = final(CIT_region/2+1-max_dop/step_dop:CIT_region/2+1+max_dop/step_dop);
@@ -123,35 +124,41 @@ end
 % A_TD(95,:)=0;
 
 %%% 1CAF
-thres_A_TRD = -30;
-fig1 = figure(1);
-set(fig1,'position',[50,50,900,600]);
 plot_A_DT = abs(A_TD');
 plot_A_DT = mag2db(plot_A_DT/max(max(plot_A_DT)));
-h1 = imagesc(array_start_time,array_Doppler_frequency,plot_A_DT);
-xlim([array_start_time(1),array_start_time(end)]);
-ylim([array_Doppler_frequency(1),array_Doppler_frequency(end)]);
-% y
-set(gca, 'YDir', 'normal');
-set(gcf,'unit','centimeters','position',[5 3 30 15]);
-set(get(gca,'XLabel'),'FontSize',22);
-set(get(gca,'YLabel'),'FontSize',22);
-colorbar;
-title('1 and 2')
-xlabel('Time (s)')
-ylabel('Doppler frequency (Hz)')
-colormap('jet');
-caxis([thres_A_TRD,0]);
-% saveas(gcf, 'E:\0617\5s_'+string(p)+'-1fft.jpg', 'jpg')
-% saveas(gcf, 'C:\Users\Wu\Desktop\labsource\code\5a.jpg', 'jpg')
 
+% fig1 = figure(1);
+% set(fig1,'position',[50,50,900,600]);
+
+% h1 = imagesc(array_start_time,array_Doppler_frequency,plot_A_DT);
+% xlim([array_start_time(1),array_start_time(end)]);
+% % ylim([array_Doppler_frequency(1),array_Doppler_frequency(end)]);
+% ylim([-300,300]);
+% % y
+% set(gca, 'YDir', 'normal');
+% set(gcf,'unit','centimeters','position',[5 3 30 15]);
+% set(get(gca,'XLabel'),'FontSize',22);
+% set(get(gca,'YLabel'),'FontSize',22);
+% colorbar;
+% title('1 and 2')
+% xlabel('Time (s)')
+% ylabel('Doppler frequency (Hz)')
+% colormap('jet');
+% clim([-30,0]);
 
 
 %%% CFAR
-%0
+% Modifided by Eason Hua
+ProbabilityFalseAlarm = 0.6;
+GuardBandSize = 5;
+TrainingBandSize = 5;
+
+
 % plot_A_DT(101, :) = -1000;
-cfar2D = phased.CFARDetector2D('GuardBandSize',5,'TrainingBandSize',5,...
-  'ProbabilityFalseAlarm',0.5);
+cfar2D = phased.CFARDetector2D('GuardBandSize',GuardBandSize, ...
+                                'TrainingBandSize',TrainingBandSize, ...
+                                'ProbabilityFalseAlarm',ProbabilityFalseAlarm);
+
 resp=plot_A_DT;
 rngGrid=array_Doppler_frequency.';
 dopGrid=array_start_time.';
@@ -165,46 +172,41 @@ CUTIdx = [rowInds(:) columnInds(:)]';
 %CFAR
 detections_1 = cfar2D(resp,CUTIdx);
 helperDetectionsMap(resp,rngGrid,dopGrid,rangeIndx,dopplerIndx,detections_1)
-% %saveas(gcf, 'E:\0617\5s_'+string(p)+'-2cfar.jpg', 'jpg')
-% saveas(gcf, 'C:\Users\Wu\Desktop\labsource\code\5c.jpg', 'jpg')
-% 
-% 
-% 
-% 
-% 
-% 
-% 
+
+
+
 %%% 2CAF
-thres_A_TRD = -30;
-fig3 = figure(3);
-set(fig3,'position',[50,50,900,600]);
 plot_A_DT2 = abs(A_TD2');
 plot_A_DT2 = mag2db(plot_A_DT2/max(max(plot_A_DT2)));
-h2 = imagesc(array_start_time,array_Doppler_frequency,plot_A_DT2);
-xlim([array_start_time(1),array_start_time(end)]);
-ylim([array_Doppler_frequency(1),array_Doppler_frequency(end)]);
-% y
-set(gca, 'YDir', 'normal');
-set(gcf,'unit','centimeters','position',[5 3 30 15]);
-set(get(gca,'XLabel'),'FontSize',22);
-set(get(gca,'YLabel'),'FontSize',22);
-colorbar;
-xlabel('Time (s)')
-ylabel('Doppler frequency (Hz)')
-title('1 and 3')
-colormap('jet');
-caxis([thres_A_TRD,0]);
-%saveas(gcf, 'E:\0617\5s_'+string(p)+'-3fft.jpg', 'jpg')
-% saveas(gcf, 'C:\Users\Wu\Desktop\labsource\code\5b.jpg', 'jpg')
-% 
-% 
-% 
-% 
+
+% fig3 = figure(3);
+% set(fig3,'position',[50,50,900,600]);
+
+% h2 = imagesc(array_start_time,array_Doppler_frequency,plot_A_DT2);
+% xlim([array_start_time(1),array_start_time(end)]);
+% % ylim([array_Doppler_frequency(1),array_Doppler_frequency(end)]);
+% ylim([-300,300]);
+% % y
+% set(gca, 'YDir', 'normal');
+% set(gcf,'unit','centimeters','position',[5 3 30 15]);
+% set(get(gca,'XLabel'),'FontSize',22);
+% set(get(gca,'YLabel'),'FontSize',22);
+% colorbar;
+% xlabel('Time (s)')
+% ylabel('Doppler frequency (Hz)')
+% title('1 and 3')
+% colormap('jet');
+% clim([-30,0]);
+
+
+
 %%% CFAR
-%0
 % plot_A_DT2(101, :) = -1000;
-cfar2D = phased.CFARDetector2D('GuardBandSize',5,'TrainingBandSize',5,...
-  'ProbabilityFalseAlarm',0.5);
+% Modifided by Eason Hua
+cfar2D = phased.CFARDetector2D('GuardBandSize',GuardBandSize, ...
+                                'TrainingBandSize',TrainingBandSize,...
+                              'ProbabilityFalseAlarm',ProbabilityFalseAlarm);
+
 resp=plot_A_DT2;
 rngGrid=array_Doppler_frequency.';
 dopGrid=array_start_time.';
@@ -218,10 +220,10 @@ CUTIdx = [rowInds(:) columnInds(:)]';
 %CFAR
 detections_2 = cfar2D(resp,CUTIdx);
 helperDetectionsMap(resp,rngGrid,dopGrid,rangeIndx,dopplerIndx,detections_2)
-% saveas(gcf, 'E:\0617\5s_'+string(p)+'-4cfar.jpg', 'jpg')
-% saveas(gcf, 'C:\Users\Wu\Desktop\labsource\code\5f.jpg', 'jpg')
-% close all;
 
+
+% Modifided by Eason Hua
+% error('原神，启动！');
 
 %% CFARCAF
  Map_1 = zeros(size(resp));
@@ -282,24 +284,30 @@ for i = 1:size(nonZeroRowIndices_1, 1)
     maxRowIndices_2(i,1) = colIndex_2;
     maxRowIndices_2(i,2) = rowIndex_2(maxIndex_2);
 end
+
+
+
 % -Inf
-plot_A_DT = plot_A_DT(:, 1:end-2);
-plot_A_DT2 = plot_A_DT2(:,1:end-2);
+% Modifided by Eason Hua
+% plot_A_DT = plot_A_DT(:, 1:end-2);
+% plot_A_DT2 = plot_A_DT2(:,1:end-2);
 % 
 % A_TD(:, 101) = 0;
 % A_TD2(:, 101) = 0;
 %%delete_index
 delete_index = 40;
-plot_A_DT = plot_A_DT(:,delete_index:end);
-plot_A_DT2 = plot_A_DT2(:,delete_index:end);
+plot_A_DT = plot_A_DT(:,delete_index:end-2);
+plot_A_DT2 = plot_A_DT2(:,delete_index:end-2);
 
 %% CAF
 % 
 % [maxValues, columnIndices] = max(abs(A_TD), [], 2);
 % [maxValues2, columnIndices2] = max(abs(A_TD2), [], 2);
+
 % columnIndices ,
 maxDF1 = (maxRowIndices_1(40:end,2) - 101) * step_dop;
 maxDF2 = (maxRowIndices_2(40:end,2) - 101) * step_dop;
+
 %% 
 %
 % 
@@ -342,20 +350,26 @@ F = zeros(2,2);
 fc = 60.48e9;
 %
 c = 3e8;
+
+
 %
-for i = 1:1:length(sensing_time)-2
+% Modifided by Eason Hua
+for i = 1:1:length(sensing_time)-3
     fd = [maxDF1(i);maxDF2(i)];
     F = -2*fc/c*[cos((fai_sur1(i) - fai_tx(i))/2)*cos((fai_sur1(i) + fai_tx(i))/2) , ...
         cos((fai_sur1(i) - fai_tx(i))/2)*sin((fai_sur1(i) + fai_tx(i))/2); ...
         cos((fai_sur2(i) - fai_tx(i))/2)*cos((fai_sur2(i) + fai_tx(i))/2), ...
         cos((fai_sur2(i) - fai_tx(i))/2)*sin((fai_sur2(i) + fai_tx(i))/2)];
     v_xy(i,:) = F \ fd;
+
     %
-    if abs(v_xy(i,1)) > 0.6 
+    % Modifided by Eason Hua
+    if abs(v_xy(i,1)) > 0.4 
         v_xy(i,1) = (v_xy(i-1,1) + v_xy(i-2,1) + v_xy(i-3,1))/3;
-    elseif abs(v_xy(i,2)) > 0.6
+    elseif abs(v_xy(i,2)) > 0.4
         v_xy(i,2) = (v_xy(i-1,2) + v_xy(i-2,2) + v_xy(i-3,2))/3;
     end
+
     xtar(i+1) = xtar(i) + v_xy(i,1) * T_slide;
     ytar(i+1) = ytar(i) + v_xy(i,2) * T_slide;
     %AOA
@@ -365,7 +379,10 @@ for i = 1:1:length(sensing_time)-2
 end
 
 %% 
-% modifided by Eason Hua
+% Modifided by Eason Hua
+xtar = xtar(:,1:end-2);
+ytar = ytar(:,1:end-2);
+
 figure(5);
 subplot(1,3,1);
 plot(xtar, ytar, '-','Color', [1, 0.5, 0],'LineWidth', 3,'DisplayName', 'Estimated Trajectory');
@@ -385,7 +402,6 @@ grid on;
 
 %% Rotate and Mirror
 % modifided by Eason Hua
-
 coordinates = [xtar; ytar];
 % 计算原始数据的中心点
 center = mean(coordinates, 2);
@@ -393,7 +409,7 @@ center = mean(coordinates, 2);
 % 对坐标进行平移，使得中心点与原点重合
 translated = coordinates - center;
 
-% 逆时针旋转pi/2的旋转矩阵
+% 顺时针旋转pi/2的旋转矩阵
 theta_rotate = 7/12 * pi;
 R = [cos(theta_rotate), -sin(theta_rotate); sin(theta_rotate), cos(theta_rotate)];
 
