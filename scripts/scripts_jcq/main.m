@@ -25,7 +25,7 @@ array_Doppler_frequency = -max_dop:step_dop:max_dop;
 
 chan_num_total = chan_num_tar+chan_num_ref;
 
-filename_data = "D:\Github\Passive-Handwriting-Tracking\data\0413\3_small.bin";
+filename_data = "D:\Github\Passive-Handwriting-Tracking\data\0413\seven_small.bin";
 
 fid1=fopen(filename_data,'rb');  %rb - (1 Btye = 8 bits)
 fseek(fid1,0,'eof');  %eof  
@@ -222,7 +222,7 @@ detections_2 = cfar2D(resp,CUTIdx);
 helperDetectionsMap(resp,rngGrid,dopGrid,rangeIndx,dopplerIndx,detections_2)
 
 
-% Modifided by Eason Hua
+% Created by Eason Hua
 % error('原神，启动！');
 
 %% CFARCAF
@@ -308,6 +308,13 @@ plot_A_DT2 = plot_A_DT2(:,delete_index:end-2);
 maxDF1 = (maxRowIndices_1(40:end,2) - 101) * step_dop;
 maxDF2 = (maxRowIndices_2(40:end,2) - 101) * step_dop;
 
+
+
+%% 卡尔曼平滑
+% Created by Eason Hua
+maxDF1 = KalmanSmoother(maxDF1);
+maxDF2 = KalmanSmoother(maxDF2);
+
 %% 
 %
 % 
@@ -384,7 +391,7 @@ xtar = xtar(:,1:length(maxDF1));
 ytar = ytar(:,1:length(maxDF2));
 
 figure(5);
-subplot(1,3,1);
+subplot(1,2,1);
 plot(xtar, ytar, '-','Color', [1, 0.5, 0],'LineWidth', 3,'DisplayName', 'Estimated Trajectory');
 % 
 hold on;
@@ -395,9 +402,7 @@ plot(xtar(end), ytar(end), 'x', 'MarkerSize', 8, 'MarkerEdgeColor', 'b',...
 hold off;
 
 legend('show');
-% xlim([1.5 2]);
-% ylim([-2 -1]);
-title('Original');
+title('KalmanSmoother');
 grid on;
 
 %% Rotate and Mirror
@@ -417,28 +422,28 @@ R = [cos(theta_rotate), -sin(theta_rotate); sin(theta_rotate), cos(theta_rotate)
 rotated = R * translated;
 
 
-% 将旋转后的坐标平移回原位置
-rotated = rotated + center;
-
-% 绘制旋转后的轨迹
-subplot(1,3,2);
-plot(rotated(1, :), rotated(2, :), '-','Color', [1, 0.5, 0],'LineWidth', 3,'DisplayName', 'Rotated Trajectory');
-hold on;
-plot(rotated(1, 1), rotated(2, 1), 'o', 'MarkerSize', 6, 'MarkerEdgeColor', 'r',...
-    'MarkerFaceColor', 'none', 'LineWidth', 2.5,'DisplayName', 'Initial Point');
-plot(rotated(1, end), rotated(2, end), 'x', 'MarkerSize', 8, 'MarkerEdgeColor', 'b',...
-    'MarkerFaceColor', 'none', 'LineWidth', 2.5,'DisplayName', 'End Point');
-hold off;
-
-legend('show');
-title('Rotated clockwise 7/12*pi');
-% axis equal;
-grid on;
-
-
-
-% 对坐标进行平移，使得中心点与原点重合
-rotated = rotated - center;
+% % 将旋转后的坐标平移回原位置
+% rotated = rotated + center;
+% 
+% % 绘制旋转后的轨迹
+% subplot(1,3,2);
+% plot(rotated(1, :), rotated(2, :), '-','Color', [1, 0.5, 0],'LineWidth', 3,'DisplayName', 'Rotated Trajectory');
+% hold on;
+% plot(rotated(1, 1), rotated(2, 1), 'o', 'MarkerSize', 6, 'MarkerEdgeColor', 'r',...
+%     'MarkerFaceColor', 'none', 'LineWidth', 2.5,'DisplayName', 'Initial Point');
+% plot(rotated(1, end), rotated(2, end), 'x', 'MarkerSize', 8, 'MarkerEdgeColor', 'b',...
+%     'MarkerFaceColor', 'none', 'LineWidth', 2.5,'DisplayName', 'End Point');
+% hold off;
+% 
+% legend('show');
+% title('Rotated clockwise 7/12*pi');
+% % axis equal;
+% grid on;
+% 
+% 
+% 
+% % 对坐标进行平移，使得中心点与原点重合
+% rotated = rotated - center;
 
 % Mirror horizontally
 rotated = [-rotated(1,:) ; rotated(2,:)];
@@ -447,7 +452,7 @@ rotated = rotated + center;
 
 
 % 绘制旋转后的轨迹
-subplot(1,3,3);
+subplot(1,2,2);
 plot(rotated(1, :), rotated(2, :), '-','Color', [1, 0.5, 0],'LineWidth', 3,'DisplayName', 'Rotated Trajectory');
 hold on;
 plot(rotated(1, 1), rotated(2, 1), 'o', 'MarkerSize', 6, 'MarkerEdgeColor', 'r',...
@@ -457,12 +462,8 @@ plot(rotated(1, end), rotated(2, end), 'x', 'MarkerSize', 8, 'MarkerEdgeColor', 
 hold off;
 
 legend('show');
-title('Mirrored horizontally');
+title('Rotated and Mirrored');
 % axis equal;
 grid on;
-
-
-
-
 
 
