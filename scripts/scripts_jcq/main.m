@@ -25,7 +25,7 @@ array_Doppler_frequency = -max_dop:step_dop:max_dop;
 
 chan_num_total = chan_num_tar+chan_num_ref;
 
-filename_data = "D:\Github\Passive-Handwriting-Tracking\data\0413\8_small.bin";
+filename_data = "D:\Github\Passive-Handwriting-Tracking\data\0413\3_small.bin";
 
 fid1=fopen(filename_data,'rb');  %rb - (1 Btye = 8 bits)
 fseek(fid1,0,'eof');  %eof  
@@ -354,7 +354,7 @@ c = 3e8;
 
 %
 % Modifided by Eason Hua
-for i = 1:1:length(sensing_time)-3
+for i = 1:1:length(maxDF1)
     fd = [maxDF1(i);maxDF2(i)];
     F = -2*fc/c*[cos((fai_sur1(i) - fai_tx(i))/2)*cos((fai_sur1(i) + fai_tx(i))/2) , ...
         cos((fai_sur1(i) - fai_tx(i))/2)*sin((fai_sur1(i) + fai_tx(i))/2); ...
@@ -364,7 +364,7 @@ for i = 1:1:length(sensing_time)-3
 
     %
     % Modifided by Eason Hua
-    if abs(v_xy(i,1)) > 0.4 
+    if abs(v_xy(i,1)) > 0.4
         v_xy(i,1) = (v_xy(i-1,1) + v_xy(i-2,1) + v_xy(i-3,1))/3;
     elseif abs(v_xy(i,2)) > 0.4
         v_xy(i,2) = (v_xy(i-1,2) + v_xy(i-2,2) + v_xy(i-3,2))/3;
@@ -380,8 +380,8 @@ end
 
 %% 
 % Modifided by Eason Hua
-xtar = xtar(:,1:end-2);
-ytar = ytar(:,1:end-2);
+xtar = xtar(:,1:length(maxDF1));
+ytar = ytar(:,1:length(maxDF2));
 
 figure(5);
 subplot(1,3,1);
@@ -401,7 +401,7 @@ title('Original');
 grid on;
 
 %% Rotate and Mirror
-% modifided by Eason Hua
+% Created by Eason Hua
 coordinates = [xtar; ytar];
 % 计算原始数据的中心点
 center = mean(coordinates, 2);
