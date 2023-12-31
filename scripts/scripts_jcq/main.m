@@ -260,24 +260,43 @@ else
 end
 resultList = [resultRow];
 
+
 % Extract and process 12nd to 379th columns
+endCol = 0;
 for i = dopplerIndx(1)+1 : dopplerIndx(2)
+    if i < endCol+1
+        continue
+    end
+
     thisCol = Map_1(:,i);
     nonZeroRow = find(thisCol ~= 0);
     if isempty(nonZeroRow)
-        % Take the last value
-        resultRow = resultRow;
-
-        % for j = i+1 : dopplerIndx(2)
-        %     testCol = Map_1(:,j);
-        % end
-
-
-
+        startCol = i;
+        % Find forwad until there exists a unempty column
+        for j = i+1 : dopplerIndx(2)
+            testCol = Map_1(:,j);
+            testNonZeroRow = find(testCol ~= 0);
+            if isempty(testNonZeroRow)
+                continue
+            else
+                endCol = j-1;
+                endRow = mean(testNonZeroRow);
+                break
+            end
+        end
+        % Assign a value for sequence, 
+        % with index from startCol to endCol, 
+        % and value from resultRow to endRow
+        slope = (endRow-resultRow)/(endCol-startCol);
+        for k = startCol:endCol
+            resultList(k-dopplerIndx(1)) =  resultRow + slope*(k-startCol);
+        end
+        i = endCol+1;
 
     elseif length(nonZeroRow) == 1
         % Simply take it
         resultRow = nonZeroRow;
+
     else
         % Find the nearest index
         tempolate = abs(nonZeroRow - resultRow);
@@ -299,7 +318,7 @@ plot(resultList, '-','Color', [1, 0.5, 0],'LineWidth', 3);
 
 
 
-%%记录这些不全为0的列的行索引
+%% 记录这些不全为0的列的行索引
 nonZeroRowIndices_1 = cell(numel(foundColumns_1),2);
 nonZeroRowIndices_2 = cell(numel(foundColumns_1),2);
 % 遍历每一个找到的列
