@@ -106,13 +106,17 @@ for i= 1:length(array_start_time)-2
     tar_integer2(i,:)=S_tar2((round(array_start_time(i)*f_s+1)):(round(array_start_time(i)*f_s)+round(CIT*f_s)));
 end  
 
-%FFT
-% tar_integer=ClutterCancellation_Doppler(tar_integer,ref_integer);
-% tar_integer2=ClutterCancellation_Doppler(tar_integer2,ref_integer);
 
+%% 滑动窗口式执行杂波消除和CAF
 for i= 1:length(array_start_time)-2
+    %%%杂波消除
+    tar_integer(i,:) = ClutterCancellation_Doppler(tar_integer(i,:),ref_integer(i,:));
+    %%%CAF
     final=fftshift(fft(tar_integer(i,:).*conj(ref_integer(i,:)),CIT_region));
     A_TD(i,:) = final(CIT_region/2+1-max_dop/step_dop:CIT_region/2+1+max_dop/step_dop);
+    %%%杂波消除
+    tar_integer2(i,:) = ClutterCancellation_Doppler(tar_integer2(i,:),ref_integer2(i,:));
+    %%%CAF
     final2=fftshift(fft(tar_integer2(i,:).*conj(ref_integer2(i,:)),CIT_region));
     A_TD2(i,:) = final2(CIT_region/2+1-max_dop/step_dop:CIT_region/2+1+max_dop/step_dop);
 end
@@ -222,63 +226,117 @@ detections_2 = cfar2D(resp,CUTIdx);
 helperDetectionsMap(resp,rngGrid,dopGrid,rangeIndx,dopplerIndx,detections_2)
 
 
-% Created by Eason Hua
-% error('原神，启动！');
-
-%% CFARCAF
+%% 提取CFAR结果并将其映射到CAF结果中的每一列最大值的多普勒频率
+% dection is a column vector, use reshape to convert into a matrix
  Map_1 = zeros(size(resp));
  Map_2 = zeros(size(resp));
  Map_1(rangeIndx(1):rangeIndx(2),dopplerIndx(1):dopplerIndx(2)) = ...
     reshape(double(detections_1),rangeIndx(2)-rangeIndx(1)+1,dopplerIndx(2)-dopplerIndx(1)+1);
   Map_2(rangeIndx(1):rangeIndx(2),dopplerIndx(1):dopplerIndx(2)) = ...
     reshape(double(detections_2),rangeIndx(2)-rangeIndx(1)+1,dopplerIndx(2)-dopplerIndx(1)+1);
-  %CFARCAF
+  %将CFAR得到的二进制数组矩阵映射到之前CAF结果对应的行和列中
 foundColumns_1 = [];
 foundColumns_2 = [];
-  %0
+  %遍历每一列，找到元素不全为0的列，证明从该列开始检测到多普勒频率了，要记录该列的索引
 for col = 1:size(Map_1, 2)
-    % 0
+    % 检查当前列是否所有行的元素都不为0
     if any(Map_1(:, col) ~= 0) && any(Map_2(:, col) ~= 0)
         foundColumns_1 = [foundColumns_1, col];
         foundColumns_2 = [foundColumns_2, col];
     end
 end
-%%0
+
+
+%% 路径匹配算法
+% Created by Eason Hua
+resultList = [];
+% Extract and process 11st column
+lastCol = Map_1(:,dopplerIndx(1));
+nonZeroRow = find(lastCol ~= 0);
+if isempty(nonZeroRow)
+    resultRow = [101];
+else
+    resultRow = mean(nonZeroRow);
+end
+resultList = [resultRow];
+
+% Extract and process 12nd to 379th columns
+for i = dopplerIndx(1)+1 : dopplerIndx(2)
+    thisCol = Map_1(:,i);
+    nonZeroRow = find(thisCol ~= 0);
+    if isempty(nonZeroRow)
+        % Take the last value
+        resultRow = resultRow;
+
+        % for j = i+1 : dopplerIndx(2)
+        %     testCol = Map_1(:,j);
+        % end
+
+
+
+
+    elseif length(nonZeroRow) == 1
+        % Simply take it
+        resultRow = nonZeroRow;
+    else
+        % Find the nearest index
+        tempolate = abs(nonZeroRow - resultRow);
+        [miniRow, miniCol] = find(tempolate==min(tempolate));
+        resultRow = nonZeroRow(miniRow(1));
+    end
+    resultList = [resultList, resultRow];
+end
+
+
+figure;
+plot(resultList, '-','Color', [1, 0.5, 0],'LineWidth', 3);
+
+
+
+
+
+
+
+
+
+%%记录这些不全为0的列的行索引
 nonZeroRowIndices_1 = cell(numel(foundColumns_1),2);
 nonZeroRowIndices_2 = cell(numel(foundColumns_1),2);
-% 
+% 遍历每一个找到的列
 for i = 1:numel(foundColumns_1)
     col_1 = foundColumns_1(i);
     col_2 = foundColumns_2(i);
-    % 0
+    % 找到当前列中不为0的元素的行索引
     nonZeroRows_1 = find(Map_1(:, col_1) ~= 0);
     nonZeroRows_2 = find(Map_2(:, col_2) ~= 0);
-    % 
+    % 存储到单元格数组中
     nonZeroRowIndices_1{i, 1} = col_1;
     nonZeroRowIndices_1{i, 2} = nonZeroRows_1;
     nonZeroRowIndices_2{i, 1} = col_2;
     nonZeroRowIndices_2{i, 2} = nonZeroRows_2;
 end
-% 0CAF
-% 0
+
+
+% 将这些不为0的列对应的行索引映射到之前画CAF的矩阵中，并比较他们的最大值，取最大值的行索引对应当前列的多普勒频移
+% 处理前先抹掉0频处的值
 plot_A_DT(101, :) = -1000;
 plot_A_DT2(101, :) = -1000;
-% 0
+% 遍历每一个不为0的列
 maxRowIndices_1 = zeros(numel(foundColumns_1),2);
 maxRowIndices_2 = zeros(numel(foundColumns_2),2);
 for i = 1:size(nonZeroRowIndices_1, 1)
-    % 00
+    % 获取当前不为0的列的列索引和对应列中不为0的行的行索引
     colIndex_1 = nonZeroRowIndices_1{i, 1};
     rowIndex_1 = nonZeroRowIndices_1{i, 2};
     colIndex_2 = nonZeroRowIndices_2{i, 1};
     rowIndex_2 = nonZeroRowIndices_2{i, 2};
-    %  data1 
+    % 从 data1 中获取对应列中这些行的值
     values_1 = plot_A_DT(rowIndex_1, colIndex_1);
     values_2 = plot_A_DT2(rowIndex_2, colIndex_2);
-    % 
+    % 找到最大值对应的行索引
     [~, maxIndex_1] = max(values_1);
     [~, maxIndex_2] = max(values_2);
-    % 
+    % 存储最大值对应的行索引和对应列索引
     maxRowIndices_1(i,1) = colIndex_1;
     maxRowIndices_1(i,2) = rowIndex_1(maxIndex_1);
     maxRowIndices_2(i,1) = colIndex_2;
@@ -289,8 +347,6 @@ end
 
 % -Inf
 % Modifided by Eason Hua
-% plot_A_DT = plot_A_DT(:, 1:end-2);
-% plot_A_DT2 = plot_A_DT2(:,1:end-2);
 % 
 % A_TD(:, 101) = 0;
 % A_TD2(:, 101) = 0;
@@ -300,17 +356,13 @@ plot_A_DT = plot_A_DT(:,delete_index:end-2);
 plot_A_DT2 = plot_A_DT2(:,delete_index:end-2);
 
 %% CAF
-% 
-% [maxValues, columnIndices] = max(abs(A_TD), [], 2);
-% [maxValues2, columnIndices2] = max(abs(A_TD2), [], 2);
-
 % columnIndices ,
-maxDF1 = (maxRowIndices_1(40:end,2) - 101) * step_dop;
-maxDF2 = (maxRowIndices_2(40:end,2) - 101) * step_dop;
+% Modifided by Eason Hua
+maxDF1 = (resultList1 - 101) * step_dop;
+maxDF2 = (resultList2 - 101) * step_dop;
 
 
-
-%% 卡尔曼平滑
+%% KalmanSmoother
 % Created by Eason Hua
 maxDF1 = KalmanSmoother(maxDF1);
 maxDF2 = KalmanSmoother(maxDF2);
@@ -408,24 +460,24 @@ grid on;
 %% Rotate and Mirror
 % Created by Eason Hua
 coordinates = [xtar; ytar];
-% 计算原始数据的中心点
+% 
 center = mean(coordinates, 2);
 
-% 对坐标进行平移，使得中心点与原点重合
+% 
 translated = coordinates - center;
 
-% 顺时针旋转pi/2的旋转矩阵
+% pi/2
 theta_rotate = 7/12 * pi;
 R = [cos(theta_rotate), -sin(theta_rotate); sin(theta_rotate), cos(theta_rotate)];
 
-% 对坐标进行旋转变换
+% 
 rotated = R * translated;
 
 
-% % 将旋转后的坐标平移回原位置
+% % 
 % rotated = rotated + center;
 % 
-% % 绘制旋转后的轨迹
+% % 
 % subplot(1,3,2);
 % plot(rotated(1, :), rotated(2, :), '-','Color', [1, 0.5, 0],'LineWidth', 3,'DisplayName', 'Rotated Trajectory');
 % hold on;
@@ -442,16 +494,16 @@ rotated = R * translated;
 % 
 % 
 % 
-% % 对坐标进行平移，使得中心点与原点重合
+% % 
 % rotated = rotated - center;
 
 % Mirror horizontally
 rotated = [-rotated(1,:) ; rotated(2,:)];
-% 将旋转后的坐标平移回原位置
+% 
 rotated = rotated + center;
 
 
-% 绘制旋转后的轨迹
+% 
 subplot(1,2,2);
 plot(rotated(1, :), rotated(2, :), '-','Color', [1, 0.5, 0],'LineWidth', 3,'DisplayName', 'Rotated Trajectory');
 hold on;
