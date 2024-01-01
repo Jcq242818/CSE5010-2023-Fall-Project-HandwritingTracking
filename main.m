@@ -257,10 +257,10 @@ lastCol_2 = Map_2(:,dopplerIndx(1));
 nonZeroRow = find(lastCol ~= 0);
 nonZeroRow_2 = find(lastCol_2 ~= 0);
 %Weight parameter when there are multiple Doppler frequencies
-alpha_1 = 0.7;
-beta_1 = 0.3;
-alpha_2 = 0.7;
-beta_2 = 0.3;
+alpha_1 = 10;
+beta_1 = 1;
+alpha_2 = 10;
+beta_2 = 1;
 %%Find the first interpolation Doppler of the two channels
 if isempty(nonZeroRow) % If the first moment is 0, you have to look later
     for i = dopplerIndx(1)+1 : dopplerIndx(2)
@@ -394,10 +394,13 @@ for i = endCol_first_2+1 : dopplerIndx(2) %12 to 379
     end
 end
 
+%如果两路信道的多普勒矩阵没有对齐，就要让他们对齐
+[aligned_DF1, aligned_DF2] = align_matrices(resultDFList_1, resultDFList_2);
+
 fig5 = figure(5);
-plot(resultDFList_1, '-','Color', [1, 0.5, 0],'LineWidth', 3);
+plot(aligned_DF1, '-','Color', [1, 0.5, 0],'LineWidth', 3);
 hold on;
-plot(resultDFList_2, '-','Color', [0, 0.5, 1],'LineWidth', 3);
+plot(aligned_DF2, '-','Color', [0, 0.5, 1],'LineWidth', 3);
 
 % 
 % %%记录这些不全为0的列的行索引
@@ -452,12 +455,10 @@ plot(resultDFList_2, '-','Color', [0, 0.5, 1],'LineWidth', 3);
 % plot_A_DT = plot_A_DT(:,delete_index:end);
 % plot_A_DT2 = plot_A_DT2(:,delete_index:end);
 
-%% 提取两个CAF矩阵每一行的最大值所在的列
-% 找到每一行中的最大值及其对应的列索引
-% columnIndices 就是每一行中最大值所在的列数,把列数置换成对应的多普勒频率
-maxDF1 = resultDFList_1;
-maxDF2 = resultDFList_2;
 %% 初始位置确定
+%%两个链路多普勒频率矩阵的确定
+maxDF1 = aligned_DF1;
+maxDF2 = aligned_DF2;
 %确定物体和收发机的初始位置
 % 定义收发机位置
 %发射机位置 
@@ -473,7 +474,7 @@ yR2 = -sqrt(2);
 xTar = 2;
 yTar = -sqrt(2);
 
-sensing_time = array_start_time(dopplerIndx(1):dopplerIndx(2))-array_start_time(dopplerIndx(1));
+sensing_time = array_start_time(1:numel(aligned_DF1));
 %%角度初始化
 fai_sur1 = zeros(1,length(sensing_time)-1);
 fai_sur2 = zeros(1,length(sensing_time)-1);
