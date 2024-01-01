@@ -287,7 +287,7 @@ for i = dopplerIndx(1)+1 : dopplerIndx(2)
         % Assign a value for sequence, 
         % with index from startCol to endCol, 
         % and value from resultRow to endRow
-        slope1 = (endRow1-resultRow1)/(endCol1-startCol1);
+        slope1 = (endRow1-resultRow1)/(endCol1-startCol1+2);
         for k = startCol1:endCol1
             resultList1(k-dopplerIndx(1)) =  resultRow1 + slope1*(k-startCol1);
         end
@@ -346,7 +346,7 @@ for i = dopplerIndx(1)+1 : dopplerIndx(2)
         % Assign a value for sequence, 
         % with index from startCol to endCol, 
         % and value from resultRow to endRow
-        slope2 = (endRow2-resultRow2)/(endCol2-startCol2);
+        slope2 = (endRow2-resultRow2)/(endCol2-startCol2+2);
         for k = startCol2 : endCol2
             resultList2(k-dopplerIndx(1)) =  resultRow2 + slope2*(k-startCol2);
         end
