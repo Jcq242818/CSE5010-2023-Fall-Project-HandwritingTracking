@@ -24,7 +24,7 @@ array_Doppler_frequency = -max_dop:step_dop:max_dop;
 
 chan_num_total = chan_num_tar+chan_num_ref;
 
-filename_data = "E:\Desktop\Project\data\数字\0413\3_small.bin";
+filename_data = "E:\Desktop\Project\data\形状\data_0409\xiangxiang_1.bin";
 
 fid1=fopen(filename_data,'rb');  %rb - 二级制打开文件(1 Btye = 8 bits)
 fseek(fid1,0,'eof');  %eof  打开文件末尾
@@ -154,7 +154,7 @@ caxis([thres_A_TRD,0]);
 %提前消除0频最大多普勒分量
 % plot_A_DT(101, :) = -1000;
 cfar2D = phased.CFARDetector2D('GuardBandSize',5,'TrainingBandSize',5,...
-  'ProbabilityFalseAlarm',0.6);
+  'ProbabilityFalseAlarm',0.7);
 resp=plot_A_DT;
 rngGrid=array_Doppler_frequency.';
 dopGrid=array_start_time.';
@@ -207,7 +207,7 @@ caxis([thres_A_TRD,0]);
 %提前消除0频最大多普勒分量
 % plot_A_DT2(101, :) = -1000;
 cfar2D = phased.CFARDetector2D('GuardBandSize',5,'TrainingBandSize',5,...
-  'ProbabilityFalseAlarm',0.6);
+  'ProbabilityFalseAlarm',0.7);
 resp=plot_A_DT2;
 rngGrid=array_Doppler_frequency.';
 dopGrid=array_start_time.';
@@ -397,6 +397,10 @@ end
 %如果两路信道的多普勒矩阵没有对齐，就要让他们对齐
 [aligned_DF1, aligned_DF2] = align_matrices(resultDFList_1, resultDFList_2);
 
+%%加卡尔曼滤波平滑
+aligned_DF1 = KalmanSmoother(aligned_DF1);
+aligned_DF2 = KalmanSmoother(aligned_DF2);
+
 fig5 = figure(5);
 plot(aligned_DF1, '-','Color', [1, 0.5, 0],'LineWidth', 3);
 hold on;
@@ -471,8 +475,8 @@ yR1 = 0;
 xR2 = sqrt(2);
 yR2 = -sqrt(2);
 %物体的初始位置
-xTar = 2;
-yTar = -sqrt(2);
+xTar = 2.5;
+yTar = -1.5;
 
 sensing_time = array_start_time(1:numel(aligned_DF1));
 %%角度初始化
@@ -532,13 +536,43 @@ plot(xtar(1), ytar(1), 'o', 'MarkerSize', 6, 'MarkerEdgeColor', 'r',...
 plot(xtar(end), ytar(end), 'x', 'MarkerSize', 8, 'MarkerEdgeColor', 'b',...
     'MarkerFaceColor', 'none', 'LineWidth', 2.5,'DisplayName', 'End Point');
 title('物体运动轨迹');
-xlabel('X坐标');
-ylabel('Y坐标');
+xlabel('X坐标(m)');
+ylabel('Y坐标(m)');
 hold off;
 legend('show','Location', 'southwest');
 % xlim([1.5 2]);
 % ylim([-2 -1]);
 % 显示网格
+grid on;
+
+%% Rotate and Mirror
+% Created by Eason Hua
+coordinates = [xtar; ytar];
+center = mean(coordinates, 2);
+translated = coordinates - center;
+
+theta_rotate = 7/12 * pi;
+R = [cos(theta_rotate), -sin(theta_rotate); sin(theta_rotate), cos(theta_rotate)];
+rotated = R * translated;
+
+% Mirror horizontally
+rotated = [-rotated(1,:) ; rotated(2,:)];
+rotated = rotated + center;
+fig7 = figure(7);
+
+plot(rotated(1, :), rotated(2, :), '-','Color', [1, 0.5, 0],'LineWidth', 3,'DisplayName', 'Estimated Trajectory');
+hold on;
+plot(rotated(1, 1), rotated(2, 1), 'o', 'MarkerSize', 6, 'MarkerEdgeColor', 'r',...
+    'MarkerFaceColor', 'none', 'LineWidth', 2.5,'DisplayName', 'Initial Point');
+plot(rotated(1, end), rotated(2, end), 'x', 'MarkerSize', 8, 'MarkerEdgeColor', 'b',...
+    'MarkerFaceColor', 'none', 'LineWidth', 2.5,'DisplayName', 'End Point');
+hold off;
+
+legend('show');
+title('物体运动轨迹');
+xlabel('X坐标(m)');
+ylabel('Y坐标(m)');
+% axis equal;
 grid on;
 
 
