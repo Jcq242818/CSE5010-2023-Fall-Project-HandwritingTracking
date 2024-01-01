@@ -105,12 +105,16 @@ for i= 1:length(array_start_time)-2
     tar_integer2(i,:)=S_tar2((round(array_start_time(i)*f_s+1)):(round(array_start_time(i)*f_s)+round(CIT*f_s)));
 end  
 
-%FFT
-% tar_integer=ClutterCancellation_Doppler(tar_integer,ref_integer);
-% tar_integer2=ClutterCancellation_Doppler(tar_integer2,ref_integer);
+%%%滑动窗口式执行杂波消除和CAF
 for i= 1:length(array_start_time)-2
+    %%%杂波消除
+    tar_integer(i,:) = ClutterCancellation_Doppler(tar_integer(i,:),ref_integer(i,:));
+    %%%CAF
     final=fftshift(fft(tar_integer(i,:).*conj(ref_integer(i,:)),CIT_region));
     A_TD(i,:) = final(CIT_region/2+1-max_dop/step_dop:CIT_region/2+1+max_dop/step_dop);
+    %%%杂波消除
+    tar_integer2(i,:) = ClutterCancellation_Doppler(tar_integer2(i,:),ref_integer2(i,:));
+    %%%CAF
     final2=fftshift(fft(tar_integer2(i,:).*conj(ref_integer2(i,:)),CIT_region));
     A_TD2(i,:) = final2(CIT_region/2+1-max_dop/step_dop:CIT_region/2+1+max_dop/step_dop);
 end
@@ -150,12 +154,12 @@ caxis([thres_A_TRD,0]);
 %提前消除0频最大多普勒分量
 % plot_A_DT(101, :) = -1000;
 cfar2D = phased.CFARDetector2D('GuardBandSize',5,'TrainingBandSize',5,...
-  'ProbabilityFalseAlarm',0.5);
+  'ProbabilityFalseAlarm',0.6);
 resp=plot_A_DT;
 rngGrid=array_Doppler_frequency.';
 dopGrid=array_start_time.';
-rangeIndx(1)=70;
-rangeIndx(2)=130;
+rangeIndx(1)=60;
+rangeIndx(2)=140;
 dopplerIndx(1)= 11;
 dopplerIndx(2)= 379;
 [columnInds,rowInds] = meshgrid(dopplerIndx(1):dopplerIndx(2),...
@@ -203,12 +207,12 @@ caxis([thres_A_TRD,0]);
 %提前消除0频最大多普勒分量
 % plot_A_DT2(101, :) = -1000;
 cfar2D = phased.CFARDetector2D('GuardBandSize',5,'TrainingBandSize',5,...
-  'ProbabilityFalseAlarm',0.5);
+  'ProbabilityFalseAlarm',0.6);
 resp=plot_A_DT2;
 rngGrid=array_Doppler_frequency.';
 dopGrid=array_start_time.';
-rangeIndx(1)= 70;
-rangeIndx(2)= 130;
+rangeIndx(1)= 60;
+rangeIndx(2)= 140;
 dopplerIndx(1)= 11;
 dopplerIndx(2)= 379;
 [columnInds,rowInds] = meshgrid(dopplerIndx(1):dopplerIndx(2),...
@@ -240,65 +244,219 @@ for col = 1:size(Map_1, 2)
         foundColumns_2 = [foundColumns_2, col];
     end
 end
-%%记录这些不全为0的列的行索引
-nonZeroRowIndices_1 = cell(numel(foundColumns_1),2);
-nonZeroRowIndices_2 = cell(numel(foundColumns_1),2);
-% 遍历每一个找到的列
-for i = 1:numel(foundColumns_1)
-    col_1 = foundColumns_1(i);
-    col_2 = foundColumns_2(i);
-    % 找到当前列中不为0的元素的行索引
-    nonZeroRows_1 = find(Map_1(:, col_1) ~= 0);
-    nonZeroRows_2 = find(Map_2(:, col_2) ~= 0);
-    % 存储到单元格数组中
-    nonZeroRowIndices_1{i, 1} = col_1;
-    nonZeroRowIndices_1{i, 2} = nonZeroRows_1;
-    nonZeroRowIndices_2{i, 1} = col_2;
-    nonZeroRowIndices_2{i, 2} = nonZeroRows_2;
+
+%%%The goal of the path matching algorithm is to increase the number of Doppler points calculated by CFAR to 369
+%%path matching algorithm
+endCol_first_1 = 0;
+endCol_first_2 = 0;
+resultDFList_1 = zeros(1,dopplerIndx(2)-dopplerIndx(1)+1);
+resultDFList_2 = zeros(1,dopplerIndx(2)-dopplerIndx(1)+1);
+% Extract and process 11st column
+lastCol = Map_1(:,dopplerIndx(1));
+lastCol_2 = Map_2(:,dopplerIndx(1));
+nonZeroRow = find(lastCol ~= 0);
+nonZeroRow_2 = find(lastCol_2 ~= 0);
+%Weight parameter when there are multiple Doppler frequencies
+alpha_1 = 0.7;
+beta_1 = 0.3;
+alpha_2 = 0.7;
+beta_2 = 0.3;
+%%Find the first interpolation Doppler of the two channels
+if isempty(nonZeroRow) % If the first moment is 0, you have to look later
+    for i = dopplerIndx(1)+1 : dopplerIndx(2)
+            testCol_first = Map_1(:,i);
+            testNonZeroRow_first = find(testCol_first ~= 0);
+            if isempty(testNonZeroRow_first)
+                continue
+            else
+                endCol_first_1 = i;
+                endRow_first_1 = mean(Row2Df(testNonZeroRow_first));
+                break
+            end
+    end
+    resultDF = endRow_first_1; 
+    resultDFList_1(endCol_first_1-dopplerIndx(1)+1) = resultDF;
+    resultDFList_1(1:endCol_first_1-dopplerIndx(1)) = [];
+else
+    endCol_first_1 = dopplerIndx(1);
+    resultDF = mean(Row2Df(nonZeroRow));
+    resultDFList_1(1) = resultDF;
 end
-% 将这些不为0的列对应的行索引映射到之前画CAF的矩阵中，并比较他们的最大值，取最大值的行索引对应当前列的多普勒频移
-% 处理前先抹掉0频处的值
-plot_A_DT(101, :) = -1000;
-plot_A_DT2(101, :) = -1000;
-% 遍历每一个不为0的列
-maxRowIndices_1 = zeros(numel(foundColumns_1),2);
-maxRowIndices_2 = zeros(numel(foundColumns_2),2);
-for i = 1:size(nonZeroRowIndices_1, 1)
-    % 获取当前不为0的列的列索引和对应列中不为0的行的行索引
-    colIndex_1 = nonZeroRowIndices_1{i, 1};
-    rowIndex_1 = nonZeroRowIndices_1{i, 2};
-    colIndex_2 = nonZeroRowIndices_2{i, 1};
-    rowIndex_2 = nonZeroRowIndices_2{i, 2};
-    % 从 data1 中获取对应列中这些行的值
-    values_1 = plot_A_DT(rowIndex_1, colIndex_1);
-    values_2 = plot_A_DT2(rowIndex_2, colIndex_2);
-    % 找到最大值对应的行索引
-    [~, maxIndex_1] = max(values_1);
-    [~, maxIndex_2] = max(values_2);
-    % 存储最大值对应的行索引和对应列索引
-    maxRowIndices_1(i,1) = colIndex_1;
-    maxRowIndices_1(i,2) = rowIndex_1(maxIndex_1);
-    maxRowIndices_2(i,1) = colIndex_2;
-    maxRowIndices_2(i,2) = rowIndex_2(maxIndex_2);
+
+if isempty(nonZeroRow_2) % If the first moment is 0, you have to look later
+    for i = dopplerIndx(1)+1 : dopplerIndx(2)
+            testCol_first = Map_2(:,i);
+            testNonZeroRow_first = find(testCol_first ~= 0);
+            if isempty(testNonZeroRow_first)
+                continue
+            else
+                endCol_first_2 = i;
+                endRow_first_2 = mean(Row2Df(testNonZeroRow_first));
+                break
+            end
+    end
+    resultDF = endRow_first_2; %%Insert 0 Doppler
+    resultDFList_2(endCol_first_2-dopplerIndx(1)+1) = resultDF;
+    resultDFList_2(1:endCol_first_2-dopplerIndx(1)) = [];
+else
+    endCol_first_2 = dopplerIndx(1);
+    resultDF = mean(Row2Df(nonZeroRow_2));
+    resultDFList_2(1) = resultDF;
 end
-% 最后两列数据是-Inf，删除
-plot_A_DT = plot_A_DT(:, 1:end-2);
-plot_A_DT2 = plot_A_DT2(:,1:end-2);
-% 删除零频附近的值
-% A_TD(:, 101) = 0;
-% A_TD2(:, 101) = 0;
-%%重要，这个删去无关信息的起始时间delete_index需要自适应地动态调整
-delete_index = 40;
-plot_A_DT = plot_A_DT(:,delete_index:end);
-plot_A_DT2 = plot_A_DT2(:,delete_index:end);
+
+% Extract and process endCol_first+1 st to 379th columns for channel 1
+endCol_1 = 0;
+for i = endCol_first_1+1 : dopplerIndx(2) %12 to 379
+    if i < endCol_1+1
+        continue
+    end
+
+    thisCol = Map_1(:,i);
+    nonZeroRow = find(thisCol ~= 0);
+    if isempty(nonZeroRow)
+        startCol = i;
+        % Find forwad until there exists a unempty column
+        for j = i+1 : dopplerIndx(2)
+            testCol = Map_1(:,j);
+            testNonZeroRow = find(testCol ~= 0);
+            if isempty(testNonZeroRow)
+                continue
+            else
+                endCol_1 = j-1;
+                endRow = mean(Row2Df(testNonZeroRow));
+                break
+            end
+        end
+        % Assign a value for sequence, 
+        % with index from startCol to endCol, 
+        % and value from resultRow to endRow
+        slope = (endRow-resultDF)/((endCol_1-startCol+2)*T_slide);
+        for k = startCol:endCol_1
+            resultDFList_1(k-endCol_first_1+1) =  resultDF + slope*((k-startCol+1)*T_slide);
+        end
+
+    elseif length(nonZeroRow) == 1  %Just one
+        % Simply take it
+        resultDF = Row2Df(nonZeroRow);
+        resultDFList_1(i-endCol_first_1+1) = resultDF;
+    else  %There's multiple Dopplers
+        % Find the nearest index
+        distance = abs(Row2Df(nonZeroRow) - resultDF); % distance
+        tempolate = alpha_1 * exp(-distance) + beta_1 * abs(Row2Df(nonZeroRow));
+        [miniRow, miniCol] = find(tempolate==max(tempolate));
+        resultDF = Row2Df(nonZeroRow(miniRow(1)));
+        resultDFList_1(i-endCol_first_1+1) = resultDF;
+    end
+end
+
+% Extract and process endCol_first+1 st to 379th columns for channel 2
+endCol_2 = 0;
+for i = endCol_first_2+1 : dopplerIndx(2) %12 to 379
+    if i < endCol_2+1
+        continue
+    end
+
+    thisCol = Map_2(:,i);
+    nonZeroRow = find(thisCol ~= 0);
+    if isempty(nonZeroRow)
+        startCol = i;
+        % Find forwad until there exists a unempty column
+        for j = i+1 : dopplerIndx(2)
+            testCol = Map_2(:,j);
+            testNonZeroRow = find(testCol ~= 0);
+            if isempty(testNonZeroRow)
+                continue
+            else
+                endCol_2 = j-1;
+                endRow = mean(Row2Df(testNonZeroRow));
+                break
+            end
+        end
+        % Assign a value for sequence, 
+        % with index from startCol to endCol, 
+        % and value from resultRow to endRow
+        slope = (endRow-resultDF)/((endCol_2-startCol+2)*T_slide);
+        for k = startCol:endCol_2
+            resultDFList_2(k-endCol_first_2+1) =  resultDF + slope*((k-startCol+1)*T_slide);
+        end
+
+    elseif length(nonZeroRow) == 1  %just one
+        % Simply take it
+        resultDF = Row2Df(nonZeroRow);
+        resultDFList_2(i-endCol_first_2+1) = resultDF;
+    else  %There's multiple Dopplers
+        % Find the nearest index
+        distance = abs(Row2Df(nonZeroRow) - resultDF); % distance
+        tempolate = alpha_2 * exp(-distance) + beta_2 * abs(Row2Df(nonZeroRow));
+        [miniRow, miniCol] = find(tempolate==max(tempolate));
+        resultDF = Row2Df(nonZeroRow(miniRow(1)));
+        resultDFList_2(i-endCol_first_2+1) = resultDF;
+    end
+end
+
+fig5 = figure(5);
+plot(resultDFList_1, '-','Color', [1, 0.5, 0],'LineWidth', 3);
+hold on;
+plot(resultDFList_2, '-','Color', [0, 0.5, 1],'LineWidth', 3);
+
+% 
+% %%记录这些不全为0的列的行索引
+% nonZeroRowIndices_1 = cell(numel(foundColumns_1),2);
+% nonZeroRowIndices_2 = cell(numel(foundColumns_1),2);
+% % 遍历每一个找到的列
+% for i = 1:numel(foundColumns_1)
+%     col_1 = foundColumns_1(i);
+%     col_2 = foundColumns_2(i);
+%     % 找到当前列中不为0的元素的行索引
+%     nonZeroRows_1 = find(Map_1(:, col_1) ~= 0);
+%     nonZeroRows_2 = find(Map_2(:, col_2) ~= 0);
+%     % 存储到单元格数组中
+%     nonZeroRowIndices_1{i, 1} = col_1;
+%     nonZeroRowIndices_1{i, 2} = nonZeroRows_1;
+%     nonZeroRowIndices_2{i, 1} = col_2;
+%     nonZeroRowIndices_2{i, 2} = nonZeroRows_2;
+% end
+% % 将这些不为0的列对应的行索引映射到之前画CAF的矩阵中，并比较他们的最大值，取最大值的行索引对应当前列的多普勒频移
+% % 处理前先抹掉0频处的值
+% plot_A_DT(101, :) = -1000;
+% plot_A_DT2(101, :) = -1000;
+% % 遍历每一个不为0的列
+% maxRowIndices_1 = zeros(numel(foundColumns_1),2);
+% maxRowIndices_2 = zeros(numel(foundColumns_2),2);
+% for i = 1:size(nonZeroRowIndices_1, 1)
+%     % 获取当前不为0的列的列索引和对应列中不为0的行的行索引
+%     colIndex_1 = nonZeroRowIndices_1{i, 1};
+%     rowIndex_1 = nonZeroRowIndices_1{i, 2};
+%     colIndex_2 = nonZeroRowIndices_2{i, 1};
+%     rowIndex_2 = nonZeroRowIndices_2{i, 2};
+%     % 从 data1 中获取对应列中这些行的值
+%     values_1 = plot_A_DT(rowIndex_1, colIndex_1);
+%     values_2 = plot_A_DT2(rowIndex_2, colIndex_2);
+%     % 找到最大值对应的行索引
+%     [~, maxIndex_1] = max(values_1);
+%     [~, maxIndex_2] = max(values_2);
+%     % 存储最大值对应的行索引和对应列索引
+%     maxRowIndices_1(i,1) = colIndex_1;
+%     maxRowIndices_1(i,2) = rowIndex_1(maxIndex_1);
+%     maxRowIndices_2(i,1) = colIndex_2;
+%     maxRowIndices_2(i,2) = rowIndex_2(maxIndex_2);
+% end
+% % 最后两列数据是-Inf，删除
+% plot_A_DT = plot_A_DT(:, 1:end-2);
+% plot_A_DT2 = plot_A_DT2(:,1:end-2);
+% % 删除零频附近的值
+% % A_TD(:, 101) = 0;
+% % A_TD2(:, 101) = 0;
+% %%重要，这个删去无关信息的起始时间delete_index需要自适应地动态调整
+% delete_index = 40;
+% plot_A_DT = plot_A_DT(:,delete_index:end);
+% plot_A_DT2 = plot_A_DT2(:,delete_index:end);
 
 %% 提取两个CAF矩阵每一行的最大值所在的列
 % 找到每一行中的最大值及其对应的列索引
-% [maxValues, columnIndices] = max(abs(A_TD), [], 2);
-% [maxValues2, columnIndices2] = max(abs(A_TD2), [], 2);
 % columnIndices 就是每一行中最大值所在的列数,把列数置换成对应的多普勒频率
-maxDF1 = (maxRowIndices_1(40:end,2) - 101) * step_dop;
-maxDF2 = (maxRowIndices_2(40:end,2) - 101) * step_dop;
+maxDF1 = resultDFList_1;
+maxDF2 = resultDFList_2;
 %% 初始位置确定
 %确定物体和收发机的初始位置
 % 定义收发机位置
@@ -315,8 +473,7 @@ yR2 = -sqrt(2);
 xTar = 2;
 yTar = -sqrt(2);
 
-sensing_time = array_start_time(delete_index+10:end-10);
-sensing_time = sensing_time - (delete_index -1 ) * 0.01;
+sensing_time = array_start_time(dopplerIndx(1):dopplerIndx(2))-array_start_time(dopplerIndx(1));
 %%角度初始化
 fai_sur1 = zeros(1,length(sensing_time)-1);
 fai_sur2 = zeros(1,length(sensing_time)-1);
@@ -350,11 +507,11 @@ for i = 1:1:length(sensing_time)-2
         cos((fai_sur2(i) - fai_tx(i))/2)*sin((fai_sur2(i) + fai_tx(i))/2)];
     v_xy(i,:) = F \ fd;
     %判断解是否正确，如果解出来离谱的速度值，就要用之前的值进行加权平均
-    if abs(v_xy(i,1)) > 0.6 
-        v_xy(i,1) = (v_xy(i-1,1) + v_xy(i-2,1) + v_xy(i-3,1))/3;
-    elseif abs(v_xy(i,2)) > 0.6
-        v_xy(i,2) = (v_xy(i-1,2) + v_xy(i-2,2) + v_xy(i-3,2))/3;
-    end
+    % if abs(v_xy(i,1)) > 0.6 
+    %     v_xy(i,1) = (v_xy(i-1,1) + v_xy(i-2,1) + v_xy(i-3,1))/3;
+    % elseif abs(v_xy(i,2)) > 0.6
+    %     v_xy(i,2) = (v_xy(i-1,2) + v_xy(i-2,2) + v_xy(i-3,2))/3;
+    % end
     xtar(i+1) = xtar(i) + v_xy(i,1) * T_slide;
     ytar(i+1) = ytar(i) + v_xy(i,2) * T_slide;
     %更新下一时刻的AOA角度以便下一次进行迭代
@@ -365,7 +522,7 @@ end
 
 %% 绘制运动物体的轨迹
 % 绘制轨迹
-fig5 = figure(5);
+fig6 = figure(6);
 plot(xtar, ytar, '-','Color', [1, 0.5, 0],'LineWidth', 3,'DisplayName', 'Estimated Trajectory');
 % 设置图形标题和坐标轴标签
 hold on;
