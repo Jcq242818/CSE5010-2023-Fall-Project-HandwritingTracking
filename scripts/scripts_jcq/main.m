@@ -25,7 +25,7 @@ array_Doppler_frequency = -max_dop:step_dop:max_dop;
 
 chan_num_total = chan_num_tar+chan_num_ref;
 
-filename_data = "D:\Github\Passive-Handwriting-Tracking\data\0413\seven_small.bin";
+filename_data = "D:\Github\Passive-Handwriting-Tracking\data\0413\3_small.bin";
 
 fid1=fopen(filename_data,'rb');  %rb - (1 Btye = 8 bits)
 fseek(fid1,0,'eof');  %eof  
@@ -595,5 +595,64 @@ legend('show');
 title('Rotated and Mirrored');
 % axis equal;
 grid on;
+
+%% Compare with Ground Truth
+% Created by Eason Hua
+lowerLeft = [min(rotated(1, :)), min(rotated(2, :))];
+upperRight = [max(rotated(1, :)), max(rotated(2, :))];
+
+
+img = imread('D:\Github\Passive-Handwriting-Tracking\imgs\three\three_hand.png');   %读取到一张图片   
+
+% RGB图像转化成灰度图像
+Ih = rgb2gray(img); 
+% 针对灰度图自动确定二值化阈值
+thresh2 = graythresh(Ih); 
+imgGray = im2bw(Ih,thresh2);
+% 找到四周白色部分的边界
+[row, col] = find(imgGray == 0);
+left = min(col);
+right = max(col);
+top = min(row);
+bottom = max(row);
+% 裁剪图像
+croppedImg = imcrop(imgGray, [left, top, right - left, bottom - top]);
+% 寻找非零元素的坐标
+[row, col] = find(croppedImg==0);
+row = -row;
+
+
+% 定义目标范围
+targetX = [lowerLeft(1), upperRight(1)];
+% 归一化数据到 [0, 1] 范围
+normalizedX = (col - min(col)) / (max(col) - min(col));
+% 映射到目标范围
+mappedX = normalizedX * (targetX(2) - targetX(1)) + targetX(1);
+
+% 定义目标范围
+targetY = [lowerLeft(2), upperRight(2)];
+% 归一化数据到 [0, 1] 范围
+normalizedY = (row - min(row)) / (max(row) - min(row));
+% 映射到目标范围
+mappedY = normalizedY * (targetY(2) - targetY(1)) + targetY(1);
+
+
+
+% 绘制轨迹
+figure;
+subplot(1,2,1);
+plot(rotated(1, :), rotated(2, :), ...
+    '-', ...
+    'Color', [1, 0.5, 0], ...
+    'LineWidth', 3, ...
+    'DisplayName', 'Estimated Trajectory');
+subplot(122);
+scatter(mappedX, mappedY, ...
+    'Marker', '.', ...
+    'MarkerEdgeColor', [0.5, 1, 0], ...
+    'DisplayName', 'Handwritten Trajectory');
+
+% axis equal; % 使轴比例相等
+
 
 
