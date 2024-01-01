@@ -289,7 +289,7 @@ for i = dopplerIndx(1)+1 : dopplerIndx(2)
         % and value from resultRow to endRow
         slope1 = (endRow1-resultRow1)/(endCol1-startCol1+2);
         for k = startCol1:endCol1
-            resultList1(k-dopplerIndx(1)) =  resultRow1 + slope1*(k-startCol1);
+            resultList1(k-dopplerIndx(1)) =  resultRow1 + slope1*(k-(startCol1-1));
         end
         i = endCol1+1;
 
@@ -348,7 +348,7 @@ for i = dopplerIndx(1)+1 : dopplerIndx(2)
         % and value from resultRow to endRow
         slope2 = (endRow2-resultRow2)/(endCol2-startCol2+2);
         for k = startCol2 : endCol2
-            resultList2(k-dopplerIndx(1)) =  resultRow2 + slope2*(k-startCol2);
+            resultList2(k-dopplerIndx(1)) =  resultRow2 + slope2*(k-(startCol2-1));
         end
         i = endCol2+1;
 
