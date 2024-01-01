@@ -107,14 +107,14 @@ for i= 1:length(array_start_time)-2
 end  
 
 
-%% 滑动窗口式执行杂波消除和CAF
+%% CAF
 for i= 1:length(array_start_time)-2
-    %%%杂波消除
+    %%%
     tar_integer(i,:) = ClutterCancellation_Doppler(tar_integer(i,:),ref_integer(i,:));
     %%%CAF
     final=fftshift(fft(tar_integer(i,:).*conj(ref_integer(i,:)),CIT_region));
     A_TD(i,:) = final(CIT_region/2+1-max_dop/step_dop:CIT_region/2+1+max_dop/step_dop);
-    %%%杂波消除
+    %%%
     tar_integer2(i,:) = ClutterCancellation_Doppler(tar_integer2(i,:),ref_integer2(i,:));
     %%%CAF
     final2=fftshift(fft(tar_integer2(i,:).*conj(ref_integer2(i,:)),CIT_region));
@@ -226,7 +226,7 @@ detections_2 = cfar2D(resp,CUTIdx);
 helperDetectionsMap(resp,rngGrid,dopGrid,rangeIndx,dopplerIndx,detections_2)
 
 
-%% 提取CFAR结果并将其映射到CAF结果中的每一列最大值的多普勒频率
+%% CFARCAF
 % dection is a column vector, use reshape to convert into a matrix
  Map_1 = zeros(size(resp));
  Map_2 = zeros(size(resp));
@@ -234,12 +234,12 @@ helperDetectionsMap(resp,rngGrid,dopGrid,rangeIndx,dopplerIndx,detections_2)
     reshape(double(detections_1),rangeIndx(2)-rangeIndx(1)+1,dopplerIndx(2)-dopplerIndx(1)+1);
   Map_2(rangeIndx(1):rangeIndx(2),dopplerIndx(1):dopplerIndx(2)) = ...
     reshape(double(detections_2),rangeIndx(2)-rangeIndx(1)+1,dopplerIndx(2)-dopplerIndx(1)+1);
-  %将CFAR得到的二进制数组矩阵映射到之前CAF结果对应的行和列中
+  %CFARCAF
 foundColumns_1 = [];
 foundColumns_2 = [];
-  %遍历每一列，找到元素不全为0的列，证明从该列开始检测到多普勒频率了，要记录该列的索引
+  %0
 for col = 1:size(Map_1, 2)
-    % 检查当前列是否所有行的元素都不为0
+    % 0
     if any(Map_1(:, col) ~= 0) && any(Map_2(:, col) ~= 0)
         foundColumns_1 = [foundColumns_1, col];
         foundColumns_2 = [foundColumns_2, col];
@@ -247,120 +247,179 @@ for col = 1:size(Map_1, 2)
 end
 
 
-%% 路径匹配算法
+%% Path Match
 % Created by Eason Hua
-resultList = [];
+resultList1 = [];
 % Extract and process 11st column
-lastCol = Map_1(:,dopplerIndx(1));
-nonZeroRow = find(lastCol ~= 0);
-if isempty(nonZeroRow)
-    resultRow = [101];
+lastCol1 = Map_1(:,dopplerIndx(1));
+nonZeroRow1 = find(lastCol1 ~= 0);
+if isempty(nonZeroRow1)
+    resultRow1 = [101];
 else
-    resultRow = mean(nonZeroRow);
+    resultRow1 = mean(nonZeroRow1);
 end
-resultList = [resultRow];
-
+resultList1 = [resultRow1];
 
 % Extract and process 12nd to 379th columns
-endCol = 0;
+startCol1 = 0;
+endCol1 = 0;
 for i = dopplerIndx(1)+1 : dopplerIndx(2)
-    if i < endCol+1
+    if i < endCol1+1
         continue
     end
 
-    thisCol = Map_1(:,i);
-    nonZeroRow = find(thisCol ~= 0);
-    if isempty(nonZeroRow)
-        startCol = i;
+    thisCol1 = Map_1(:,i);
+    nonZeroRow1 = find(thisCol1 ~= 0);
+    if isempty(nonZeroRow1)
+        startCol1 = i;
         % Find forwad until there exists a unempty column
         for j = i+1 : dopplerIndx(2)
-            testCol = Map_1(:,j);
-            testNonZeroRow = find(testCol ~= 0);
-            if isempty(testNonZeroRow)
+            testCol1 = Map_1(:,j);
+            testNonZeroRow1 = find(testCol1 ~= 0);
+            if isempty(testNonZeroRow1)
                 continue
             else
-                endCol = j-1;
-                endRow = mean(testNonZeroRow);
+                endCol1 = j-1;
+                endRow1 = mean(testNonZeroRow1);
                 break
             end
         end
         % Assign a value for sequence, 
         % with index from startCol to endCol, 
         % and value from resultRow to endRow
-        slope = (endRow-resultRow)/(endCol-startCol);
-        for k = startCol:endCol
-            resultList(k-dopplerIndx(1)) =  resultRow + slope*(k-startCol);
+        slope1 = (endRow1-resultRow1)/(endCol1-startCol1);
+        for k = startCol1:endCol1
+            resultList1(k-dopplerIndx(1)) =  resultRow1 + slope1*(k-startCol1);
         end
-        i = endCol+1;
+        i = endCol1+1;
 
-    elseif length(nonZeroRow) == 1
+    elseif length(nonZeroRow1) == 1
         % Simply take it
-        resultRow = nonZeroRow;
+        resultRow1 = nonZeroRow1;
 
     else
         % Find the nearest index
-        tempolate = abs(nonZeroRow - resultRow);
-        [miniRow, miniCol] = find(tempolate==min(tempolate));
-        resultRow = nonZeroRow(miniRow(1));
+        tempolate1 = abs(nonZeroRow1 - resultRow1);
+        [miniRow1, miniCol1] = find(tempolate1==min(tempolate1));
+        resultRow1 = nonZeroRow1(miniRow1(1));
     end
-    resultList = [resultList, resultRow];
+    resultList1 = [resultList1, resultRow1];
+end
+
+
+
+resultList2 = [];
+% Extract and process 11st column
+lastCol2 = Map_2(:,dopplerIndx(1));
+nonZeroRow2 = find(lastCol2 ~= 0);
+if isempty(nonZeroRow2)
+    resultRow2 = [101];
+else
+    resultRow2 = mean(nonZeroRow2);
+end
+resultList2 = [resultRow2];
+
+% Extract and process 12nd to 379th columns
+startCol2 = 0;
+endCol2 = 0;
+for i = dopplerIndx(1)+1 : dopplerIndx(2)
+    if i < endCol2+1
+        continue
+    end
+
+    thisCol2 = Map_2(:,i);
+    nonZeroRow2 = find(thisCol2 ~= 0);
+    if isempty(nonZeroRow2)
+        startCol2 = i;
+        % Find forwad until there exists a unempty column
+        for j = i+1 : dopplerIndx(2)
+            testCol2 = Map_2(:,j);
+            testNonZeroRow2 = find(testCol2 ~= 0);
+            if isempty(testNonZeroRow2)
+                continue
+            else
+                endCol2 = j-1;
+                endRow2 = mean(testNonZeroRow2);
+                break
+            end
+        end
+        % Assign a value for sequence, 
+        % with index from startCol to endCol, 
+        % and value from resultRow to endRow
+        slope2 = (endRow2-resultRow2)/(endCol2-startCol2);
+        for k = startCol2 : endCol2
+            resultList2(k-dopplerIndx(1)) =  resultRow2 + slope2*(k-startCol2);
+        end
+        i = endCol2+1;
+
+    elseif length(nonZeroRow2) == 1
+        % Simply take it
+        resultRow2 = nonZeroRow2;
+
+    else
+        % Find the nearest index
+        tempolate2 = abs(nonZeroRow2 - resultRow2);
+        [miniRow2, miniCol2] = find(tempolate2==min(tempolate2));
+        resultRow2 = nonZeroRow2(miniRow2(1));
+    end
+    resultList2 = [resultList2, resultRow2];
 end
 
 
 figure;
-plot(resultList, '-','Color', [1, 0.5, 0],'LineWidth', 3);
+plot(resultList1, '-','Color', [1, 0.5, 0],'LineWidth', 3);
+hold on;
+plot(resultList2, '-', 'Color', [0.5, 1, 0], 'LineWidth',3);
+hold off;
+
+legend('show');
+grid on;
+
+%% 0
+% Commented by Eason Hua
+% nonZeroRowIndices_1 = cell(numel(foundColumns_1),2);
+% nonZeroRowIndices_2 = cell(numel(foundColumns_1),2);
+% % 
+% for i = 1:numel(foundColumns_1)
+%     col_1 = foundColumns_1(i);
+%     col_2 = foundColumns_2(i);
+%     % 0
+%     nonZeroRows_1 = find(Map_1(:, col_1) ~= 0);
+%     nonZeroRows_2 = find(Map_2(:, col_2) ~= 0);
+%     % 
+%     nonZeroRowIndices_1{i, 1} = col_1;
+%     nonZeroRowIndices_1{i, 2} = nonZeroRows_1;
+%     nonZeroRowIndices_2{i, 1} = col_2;
+%     nonZeroRowIndices_2{i, 2} = nonZeroRows_2;
+% end
 
 
-
-
-
-
-
-
-
-%% 记录这些不全为0的列的行索引
-nonZeroRowIndices_1 = cell(numel(foundColumns_1),2);
-nonZeroRowIndices_2 = cell(numel(foundColumns_1),2);
-% 遍历每一个找到的列
-for i = 1:numel(foundColumns_1)
-    col_1 = foundColumns_1(i);
-    col_2 = foundColumns_2(i);
-    % 找到当前列中不为0的元素的行索引
-    nonZeroRows_1 = find(Map_1(:, col_1) ~= 0);
-    nonZeroRows_2 = find(Map_2(:, col_2) ~= 0);
-    % 存储到单元格数组中
-    nonZeroRowIndices_1{i, 1} = col_1;
-    nonZeroRowIndices_1{i, 2} = nonZeroRows_1;
-    nonZeroRowIndices_2{i, 1} = col_2;
-    nonZeroRowIndices_2{i, 2} = nonZeroRows_2;
-end
-
-
-% 将这些不为0的列对应的行索引映射到之前画CAF的矩阵中，并比较他们的最大值，取最大值的行索引对应当前列的多普勒频移
-% 处理前先抹掉0频处的值
+% 0CAF
+% 0
 plot_A_DT(101, :) = -1000;
 plot_A_DT2(101, :) = -1000;
-% 遍历每一个不为0的列
-maxRowIndices_1 = zeros(numel(foundColumns_1),2);
-maxRowIndices_2 = zeros(numel(foundColumns_2),2);
-for i = 1:size(nonZeroRowIndices_1, 1)
-    % 获取当前不为0的列的列索引和对应列中不为0的行的行索引
-    colIndex_1 = nonZeroRowIndices_1{i, 1};
-    rowIndex_1 = nonZeroRowIndices_1{i, 2};
-    colIndex_2 = nonZeroRowIndices_2{i, 1};
-    rowIndex_2 = nonZeroRowIndices_2{i, 2};
-    % 从 data1 中获取对应列中这些行的值
-    values_1 = plot_A_DT(rowIndex_1, colIndex_1);
-    values_2 = plot_A_DT2(rowIndex_2, colIndex_2);
-    % 找到最大值对应的行索引
-    [~, maxIndex_1] = max(values_1);
-    [~, maxIndex_2] = max(values_2);
-    % 存储最大值对应的行索引和对应列索引
-    maxRowIndices_1(i,1) = colIndex_1;
-    maxRowIndices_1(i,2) = rowIndex_1(maxIndex_1);
-    maxRowIndices_2(i,1) = colIndex_2;
-    maxRowIndices_2(i,2) = rowIndex_2(maxIndex_2);
-end
+% % 0
+% Commented by Eason Hua
+% maxRowIndices_1 = zeros(numel(foundColumns_1),2);
+% maxRowIndices_2 = zeros(numel(foundColumns_2),2);
+% for i = 1:size(nonZeroRowIndices_1, 1)
+%     % 00
+%     colIndex_1 = nonZeroRowIndices_1{i, 1};
+%     rowIndex_1 = nonZeroRowIndices_1{i, 2};
+%     colIndex_2 = nonZeroRowIndices_2{i, 1};
+%     rowIndex_2 = nonZeroRowIndices_2{i, 2};
+%     %  data1 
+%     values_1 = plot_A_DT(rowIndex_1, colIndex_1);
+%     values_2 = plot_A_DT2(rowIndex_2, colIndex_2);
+%     % 
+%     [~, maxIndex_1] = max(values_1);
+%     [~, maxIndex_2] = max(values_2);
+%     % 
+%     maxRowIndices_1(i,1) = colIndex_1;
+%     maxRowIndices_1(i,2) = rowIndex_1(maxIndex_1);
+%     maxRowIndices_2(i,1) = colIndex_2;
+%     maxRowIndices_2(i,2) = rowIndex_2(maxIndex_2);
+% end
 
 
 
