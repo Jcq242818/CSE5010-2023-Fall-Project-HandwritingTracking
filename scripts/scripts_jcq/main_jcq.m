@@ -623,13 +623,6 @@ normalizedY = (Y - min(Y)) / (max(Y) - min(Y));
 mappedY = normalizedY * (targetY(2) - targetY(1)) + targetY(1);
 
 
-% Under sample to match the length
-% 计算欠采样因子
-undersampleFactor = floor(length(X) / length(rotated(1,:)));
-% 对序列进行欠采样
-undersampledX = X(1:undersampleFactor:end);
-undersampledY = Y(1:undersampleFactor:end);
-
 
 %% Trajectory to scatter
 % Created by Eason Hua
@@ -655,6 +648,16 @@ end
 
 [matrixY, matrixX] = find(matrix==0);
 matrixY = -matrixY;
+
+
+% Under sample estimated to match the length
+% 
+undersampleFactor = floor(length(X) / length(matrixX));
+% 
+undersampledX = X(1:undersampleFactor:end);
+undersampledY = Y(1:undersampleFactor:end);
+undersampledX = undersampledX(1:length(matrixX),:);
+undersampledY = undersampledY(1:length(matrixY),:);
 
 
 %% Draw trajectories
@@ -731,18 +734,18 @@ grid on;
 
 %% Evaluate similarity
 
-% 计算散点图的累积分布函数
+% 
 cdf_estimated = cumsum(histcounts2(matrixX, matrixY, 'Normalization', 'cdf'));
 cdf_handwritten = cumsum(histcounts2(undersampledX, undersampledY, 'Normalization', 'cdf'));
 
-% 绘制CDF曲线
+% CDF
 figure;
 plot(linspace(0, 1, length(cdf_estimated)), cdf_estimated, 'LineWidth', 2, 'DisplayName', 'Estimated Trajectory');
 hold on;
 plot(linspace(0, 1, length(cdf_handwritten)), cdf_handwritten, 'LineWidth', 2, 'DisplayName', 'Handwritten Trajectory');
 hold off;
 
-% 设置图例等其他图形属性
+% 
 legend('Estimated Trajectory', 'Handwritten Trajectory');
 xlabel('Similarity');
 ylabel('Cumulative Probability');
