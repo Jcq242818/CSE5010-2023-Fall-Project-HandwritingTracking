@@ -24,7 +24,7 @@ array_Doppler_frequency = -max_dop:step_dop:max_dop;
 
 chan_num_total = chan_num_tar+chan_num_ref;
 
-filename_data = "E:\Desktop\Project\Data\数字\0413\3_small.bin";
+filename_data = "E:\Desktop\Project\Data\Right_data\3.bin";
 
 fid1=fopen(filename_data,'rb');  %rb - 二级制打开文件(1 Btye = 8 bits)
 fseek(fid1,0,'eof');  %eof  打开文件末尾
@@ -577,177 +577,177 @@ ylabel('Y坐标(m)');
 % axis equal;
 grid on;
 
-%% save the position data
-temp_save(1,:) = xtar;
-temp_save(2,:) = ytar;
-save('./results_data/2.mat', 'temp_save');
+% %% save the position data
+% temp_save(1,:) = xtar;
+% temp_save(2,:) = ytar;
+% save('./results_data/2.mat', 'temp_save');
 
-%% Get Ground Truth
-% Read picture and convert it to binary image
-img = imread("E:\Desktop\Project\imgs\eight\eight_hand.png");  
-
-Ih = rgb2gray(img); 
-
-thresh2 = graythresh(Ih); 
-imgGray = im2bw(Ih,thresh2);
-
-
-% Cut the figure to drop the useless white
-
-[row, col] = find(imgGray == 0);
-left = min(col);
-right = max(col);
-top = min(row);
-bottom = max(row);
-
-croppedImg = imcrop(imgGray, [left, top, right - left, bottom - top]);
-
-
-%% Adjust the data to expected range
-[Y, X] = find(croppedImg==0);
-Y = -Y;
-
-lowerLeft = [min(rotated(1, :)), min(rotated(2, :))];
-upperRight = [max(rotated(1, :)), max(rotated(2, :))];
-
-targetX = [lowerLeft(1), upperRight(1)];
-
-normalizedX = (X - min(X)) / (max(X) - min(X));
-
-mappedX = normalizedX * (targetX(2) - targetX(1)) + targetX(1);
-
-
-targetY = [lowerLeft(2), upperRight(2)];
-
-normalizedY = (Y - min(Y)) / (max(Y) - min(Y));
-
-mappedY = normalizedY * (targetY(2) - targetY(1)) + targetY(1);
-
-
-
-%% Trajectory to scatter
-matrix = ones(size(croppedImg,1), size(croppedImg,2));
-for i = 1:1:length(rotated(1,:))
-    point = [rotated(1,i), rotated(2,i)];
-    pointMatrix = [0,0];
-
-    pointMatrix(1) = (point(1)-lowerLeft(1))/(upperRight(1)-lowerLeft(1))*size(croppedImg,2);
-    pointMatrix(1) = ceil(pointMatrix(1)+1);
-    if pointMatrix(1) > size(croppedImg,2)
-        pointMatrix(1) = size(croppedImg,2);
-    end
-
-    pointMatrix(2) = (upperRight(2)-point(2))/(upperRight(2)-lowerLeft(2))*size(croppedImg,1);
-    pointMatrix(2) = ceil(pointMatrix(2)+1);
-    if pointMatrix(2) > size(croppedImg,1)
-        pointMatrix(2) = size(croppedImg,1);
-    end
-
-    matrix(pointMatrix(2), pointMatrix(1)) = 0;
-end
-
-[matrixY, matrixX] = find(matrix==0);
-matrixY = -matrixY;
-
-
-% Under sample estimated to match the length
-
-undersampleFactor = floor(length(X) / length(matrixX));
-
-undersampledX = X(1:undersampleFactor:end);
-undersampledY = Y(1:undersampleFactor:end);
-undersampledX = undersampledX(1:length(matrixX),:);
-undersampledY = undersampledY(1:length(matrixY),:);
-
-
-%% Draw trajectories
-fig8 = figure(8);
-% scatter(mappedX, mappedY, ...
+% %% Get Ground Truth
+% % Read picture and convert it to binary image
+% img = imread("E:\Desktop\Project\imgs\eight\eight_hand.png");  
+% 
+% Ih = rgb2gray(img); 
+% 
+% thresh2 = graythresh(Ih); 
+% imgGray = im2bw(Ih,thresh2);
+% 
+% 
+% % Cut the figure to drop the useless white
+% 
+% [row, col] = find(imgGray == 0);
+% left = min(col);
+% right = max(col);
+% top = min(row);
+% bottom = max(row);
+% 
+% croppedImg = imcrop(imgGray, [left, top, right - left, bottom - top]);
+% 
+% 
+% %% Adjust the data to expected range
+% [Y, X] = find(croppedImg==0);
+% Y = -Y;
+% 
+% lowerLeft = [min(rotated(1, :)), min(rotated(2, :))];
+% upperRight = [max(rotated(1, :)), max(rotated(2, :))];
+% 
+% targetX = [lowerLeft(1), upperRight(1)];
+% 
+% normalizedX = (X - min(X)) / (max(X) - min(X));
+% 
+% mappedX = normalizedX * (targetX(2) - targetX(1)) + targetX(1);
+% 
+% 
+% targetY = [lowerLeft(2), upperRight(2)];
+% 
+% normalizedY = (Y - min(Y)) / (max(Y) - min(Y));
+% 
+% mappedY = normalizedY * (targetY(2) - targetY(1)) + targetY(1);
+% 
+% 
+% 
+% %% Trajectory to scatter
+% matrix = ones(size(croppedImg,1), size(croppedImg,2));
+% for i = 1:1:length(rotated(1,:))
+%     point = [rotated(1,i), rotated(2,i)];
+%     pointMatrix = [0,0];
+% 
+%     pointMatrix(1) = (point(1)-lowerLeft(1))/(upperRight(1)-lowerLeft(1))*size(croppedImg,2);
+%     pointMatrix(1) = ceil(pointMatrix(1)+1);
+%     if pointMatrix(1) > size(croppedImg,2)
+%         pointMatrix(1) = size(croppedImg,2);
+%     end
+% 
+%     pointMatrix(2) = (upperRight(2)-point(2))/(upperRight(2)-lowerLeft(2))*size(croppedImg,1);
+%     pointMatrix(2) = ceil(pointMatrix(2)+1);
+%     if pointMatrix(2) > size(croppedImg,1)
+%         pointMatrix(2) = size(croppedImg,1);
+%     end
+% 
+%     matrix(pointMatrix(2), pointMatrix(1)) = 0;
+% end
+% 
+% [matrixY, matrixX] = find(matrix==0);
+% matrixY = -matrixY;
+% 
+% 
+% % Under sample estimated to match the length
+% 
+% undersampleFactor = floor(length(X) / length(matrixX));
+% 
+% undersampledX = X(1:undersampleFactor:end);
+% undersampledY = Y(1:undersampleFactor:end);
+% undersampledX = undersampledX(1:length(matrixX),:);
+% undersampledY = undersampledY(1:length(matrixY),:);
+% 
+% 
+% %% Draw trajectories
+% fig8 = figure(8);
+% % scatter(mappedX, mappedY, ...
+% %     'Marker', '.', ...
+% %     'MarkerEdgeColor', [0.5, 1, 1], ...
+% %     'DisplayName', 'Handwritten Trajectory');
+% % hold on;
+% 
+% % plot(undersampledX, undersampledY, ...
+% %     '-', ...
+% %     'Color', [1, 0.5, 0], ...
+% %     'LineWidth', 0.01, ...
+% %     'DisplayName', 'Estimated Trajectory');
+% % hold on;
+% 
+% scatter(undersampledX, undersampledY, ...
 %     'Marker', '.', ...
 %     'MarkerEdgeColor', [0.5, 1, 1], ...
 %     'DisplayName', 'Handwritten Trajectory');
 % hold on;
-
-% plot(undersampledX, undersampledY, ...
+% 
+% plot(rotated(1, :), rotated(2, :), ...
 %     '-', ...
 %     'Color', [1, 0.5, 0], ...
-%     'LineWidth', 0.01, ...
+%     'LineWidth', 3, ...
 %     'DisplayName', 'Estimated Trajectory');
 % hold on;
-
-scatter(undersampledX, undersampledY, ...
-    'Marker', '.', ...
-    'MarkerEdgeColor', [0.5, 1, 1], ...
-    'DisplayName', 'Handwritten Trajectory');
-hold on;
-
-plot(rotated(1, :), rotated(2, :), ...
-    '-', ...
-    'Color', [1, 0.5, 0], ...
-    'LineWidth', 3, ...
-    'DisplayName', 'Estimated Trajectory');
-hold on;
-
-plot(rotated(1, 1), rotated(2, 1), ...
-    'x', ...
-    'MarkerSize', 8, ...
-    'MarkerEdgeColor', 'r',...
-    'MarkerFaceColor', 'none', ...
-    'LineWidth', 2.5, ...
-    'DisplayName', 'Initial Point');
-hold on;
-
-plot(rotated(1, end), rotated(2, end), ...
-    'x', ...
-    'MarkerSize', 8, ...
-    'MarkerEdgeColor', 'b',...
-    'MarkerFaceColor', 'none', ...
-    'LineWidth', 2.5, ...
-    'DisplayName', 'End Point');
-hold off;
-
-legend('show');
-grid on;
-
-% axis equal; 
-
-
-%% Draw scatters
-fig9 = figure(9);
-scatter(matrixX,size(croppedImg,1)+matrixY, ...
-    'Marker', '.', ...
-    'MarkerEdgeColor', [1, 0.5, 0], ...
-    'DisplayName', 'Estimated Trajectory');
-hold on;
-
-scatter(undersampledX, size(croppedImg,1)+undersampledY, ...
-    'Marker', '.', ...
-    'MarkerEdgeColor', [0, 0, 1], ...
-    'DisplayName', 'Handwritten Trajectory');
-hold off;
-
-xlim([0, size(croppedImg,2)]);
-ylim([0, size(croppedImg,1)]);
-legend('show');
-grid on;
-
-
-%% Evaluate similarity
-
-
-cdf_estimated = cumsum(histcounts2(matrixX, matrixY, 'Normalization', 'cdf'));
-cdf_handwritten = cumsum(histcounts2(undersampledX, undersampledY, 'Normalization', 'cdf'));
-
-
-fig10 = figure(10);
-plot(linspace(0, 1, length(cdf_estimated)), cdf_estimated, 'LineWidth', 2, 'DisplayName', 'Estimated Trajectory');
-hold on;
-plot(linspace(0, 1, length(cdf_handwritten)), cdf_handwritten, 'LineWidth', 2, 'DisplayName', 'Handwritten Trajectory');
-hold off;
-
-
-legend('Estimated Trajectory', 'Handwritten Trajectory');
-xlabel('Similarity');
-ylabel('Cumulative Probability');
-title('Cumulative Distribution Function (CDF) of Trajectories');
+% 
+% plot(rotated(1, 1), rotated(2, 1), ...
+%     'x', ...
+%     'MarkerSize', 8, ...
+%     'MarkerEdgeColor', 'r',...
+%     'MarkerFaceColor', 'none', ...
+%     'LineWidth', 2.5, ...
+%     'DisplayName', 'Initial Point');
+% hold on;
+% 
+% plot(rotated(1, end), rotated(2, end), ...
+%     'x', ...
+%     'MarkerSize', 8, ...
+%     'MarkerEdgeColor', 'b',...
+%     'MarkerFaceColor', 'none', ...
+%     'LineWidth', 2.5, ...
+%     'DisplayName', 'End Point');
+% hold off;
+% 
+% legend('show');
+% grid on;
+% 
+% % axis equal; 
+% 
+% 
+% %% Draw scatters
+% fig9 = figure(9);
+% scatter(matrixX,size(croppedImg,1)+matrixY, ...
+%     'Marker', '.', ...
+%     'MarkerEdgeColor', [1, 0.5, 0], ...
+%     'DisplayName', 'Estimated Trajectory');
+% hold on;
+% 
+% scatter(undersampledX, size(croppedImg,1)+undersampledY, ...
+%     'Marker', '.', ...
+%     'MarkerEdgeColor', [0, 0, 1], ...
+%     'DisplayName', 'Handwritten Trajectory');
+% hold off;
+% 
+% xlim([0, size(croppedImg,2)]);
+% ylim([0, size(croppedImg,1)]);
+% legend('show');
+% grid on;
+% 
+% 
+% %% Evaluate similarity
+% 
+% 
+% cdf_estimated = cumsum(histcounts2(matrixX, matrixY, 'Normalization', 'cdf'));
+% cdf_handwritten = cumsum(histcounts2(undersampledX, undersampledY, 'Normalization', 'cdf'));
+% 
+% 
+% fig10 = figure(10);
+% plot(linspace(0, 1, length(cdf_estimated)), cdf_estimated, 'LineWidth', 2, 'DisplayName', 'Estimated Trajectory');
+% hold on;
+% plot(linspace(0, 1, length(cdf_handwritten)), cdf_handwritten, 'LineWidth', 2, 'DisplayName', 'Handwritten Trajectory');
+% hold off;
+% 
+% 
+% legend('Estimated Trajectory', 'Handwritten Trajectory');
+% xlabel('Similarity');
+% ylabel('Cumulative Probability');
+% title('Cumulative Distribution Function (CDF) of Trajectories');
 
